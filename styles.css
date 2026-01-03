@@ -179,7 +179,7 @@ code {
 
 .tile {
   position: relative;
-  height: 260px;
+  aspect-ratio: 16 / 9;
   border: 1px solid var(--border);
   background: var(--cover, var(--panel));
   background-size: cover;
