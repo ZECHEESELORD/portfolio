@@ -134,6 +134,30 @@ code {
   background: var(--panel-alt);
 }
 
+.button--github {
+  background: #1b1b25;
+  border-color: #2f2f3c;
+  color: var(--text);
+}
+
+.button--discord {
+  background: #5865f2;
+  border-color: #3c48b8;
+  color: #f8f8ff;
+}
+
+.button--discord:hover {
+  filter: brightness(1.08);
+  border-color: #5865f2;
+}
+
+.button .icon {
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "Segoe UI Symbol", "Monocraft", monospace;
+  font-weight: 900;
+  margin-right: 0.4rem;
+  font-size: 1rem;
+}
+
 .button:hover {
   transform: translateY(-1px);
   border-color: var(--accent);
