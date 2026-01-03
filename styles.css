@@ -206,11 +206,13 @@ code {
   background: var(--cover, var(--panel));
   background-size: cover;
   background-position: center;
-  border-radius: 2px;
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.25);
+  box-shadow:
+    0 14px 30px rgba(76, 79, 105, 0.35),
+    4px 4px 0 rgba(76, 79, 105, 0.2);
 }
 
 .tile::after {
@@ -223,7 +225,9 @@ code {
 .tile:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.35);
+  box-shadow:
+    0 18px 36px rgba(76, 79, 105, 0.4),
+    6px 6px 0 rgba(76, 79, 105, 0.25);
 }
 
 .tile::before {
@@ -312,7 +316,7 @@ code {
 
 .detail__hero {
   position: relative;
-  min-height: 200px;
+  min-height: 240px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(12, 12, 12, 0.85)),
     var(--hero, radial-gradient(circle, #1c1d20, #0f0f10));
@@ -352,6 +356,7 @@ code {
   padding: 1.25rem;
   line-height: 1.7;
   background: var(--panel-alt);
+  overflow-y: auto;
 }
 
 .detail__body h2,
@@ -414,12 +419,18 @@ code {
 .overlay__panel {
   position: relative;
   width: min(960px, 100%);
+  max-height: 90vh;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 2px;
-  box-shadow: 8px 8px 0 rgba(76, 79, 105, 0.35);
-  transform: translateY(20px);
+  border-radius: 10px 10px 0 0;
+  box-shadow:
+    0 22px 40px rgba(76, 79, 105, 0.35),
+    8px 8px 0 rgba(76, 79, 105, 0.25);
+  transform: translateY(16px);
   animation: slideUp 220ms ease-out forwards;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .overlay__panel::before {
@@ -436,7 +447,7 @@ code {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(28px);
   }
   to {
     opacity: 1;
