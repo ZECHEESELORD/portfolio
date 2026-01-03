@@ -5,19 +5,19 @@
 }
 
 :root {
-  --bg: #1e1e2e; /* base */
-  --bg-mantle: #181825; /* mantle */
-  --bg-crust: #11111b; /* crust */
-  --panel: #313244; /* surface0 */
-  --panel-alt: #45475a; /* surface1 */
-  --panel-2: #585b70; /* surface2 */
-  --text: #cdd6f4; /* text */
-  --muted: #bac2de; /* subtext1 */
-  --muted-2: #a6adc8; /* subtext0 */
-  --accent: #a6e3a1; /* green */
-  --accent-gold: #f0c75e; /* optional highlight */
-  --border: #3a3a3a;
-  color-scheme: dark;
+  --bg: #eff1f5; /* base */
+  --bg-mantle: #e6e9ef; /* mantle */
+  --bg-crust: #dce0e8; /* crust */
+  --panel: #ccd0da; /* surface0 */
+  --panel-alt: #bcc0cc; /* surface1 */
+  --panel-2: #acb0be; /* surface2 */
+  --text: #4c4f69; /* text */
+  --muted: #5c5f77; /* subtext1 */
+  --muted-2: #6c6f85; /* subtext0 */
+  --accent: #40a02b; /* green */
+  --accent-gold: #df8e1d; /* optional highlight */
+  --border: #9ca0b0; /* overlay0 */
+  color-scheme: light;
 }
 
 *,
@@ -119,25 +119,48 @@ code {
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, border-color 120ms ease;
   border-radius: 2px;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.25);
   position: relative;
   overflow: hidden;
 }
 
 .button--solid {
   background: var(--accent);
-  color: #11111b;
-  border-color: #6fb874;
+  color: #f8fafc;
+  border-color: #2f7b23;
 }
 
 .button--ghost {
   background: var(--panel-alt);
 }
 
+.button:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  filter: brightness(1.05);
+}
+
+.button:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 0 0 1px rgba(76, 79, 105, 0.5), 3px 3px 0 rgba(76, 79, 105, 0.35);
+  filter: brightness(0.95);
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
 .button--github {
-  background: #1b1b25;
-  border-color: #2f2f3c;
-  color: var(--text);
+  background: #eceff4;
+  border-color: #b6bac7;
+  color: #1f2933;
 }
 
 .button--discord {
@@ -154,29 +177,6 @@ code {
 .button,
 .button:visited {
   text-decoration: none;
-}
-
-.button:hover {
-  transform: translateY(-1px);
-  border-color: var(--accent);
-  filter: brightness(1.05);
-}
-
-.button:active {
-  transform: translateY(1px);
-  box-shadow: inset 0 0 0 1px #0b0b0c, 3px 3px 0 rgba(0, 0, 0, 0.4);
-  filter: brightness(0.95);
-}
-
-.button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-  pointer-events: none;
 }
 
 .section {
@@ -210,7 +210,7 @@ code {
   overflow: hidden;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.25);
 }
 
 .tile::after {
@@ -223,7 +223,7 @@ code {
 .tile:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.35);
 }
 
 .tile::before {
@@ -254,63 +254,6 @@ code {
   font-size: 0.95rem;
 }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: end center;
-  padding: 1rem;
-  z-index: 10;
-}
-
-.overlay[hidden] {
-  display: none;
-}
-
-.overlay__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(6px);
-}
-
-.overlay__panel {
-  position: relative;
-  width: min(960px, 100%);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
-  transform: translateY(20px);
-  animation: slideUp 220ms ease-out forwards;
-}
-
-.overlay__panel::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  pointer-events: none;
-}
-
-.overlay-open .page {
-  filter: blur(4px);
-  transition: filter 160ms ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 .status {
   font-family: "Monocraft", "Lucida Console", Consolas, monospace;
   font-size: 0.95rem;
@@ -322,7 +265,7 @@ code {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.25);
   opacity: 0.92;
   pointer-events: none;
   z-index: 5;
@@ -334,7 +277,7 @@ code {
 }
 
 .status[data-tone="error"] {
-  color: #ffb3b3;
+  color: #d20f39;
 }
 
 .chip {
@@ -360,7 +303,7 @@ code {
   border-radius: 2px;
   overflow: hidden;
   background: var(--panel);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 6px 6px 0 rgba(76, 79, 105, 0.25);
   position: relative;
 }
 
@@ -406,6 +349,21 @@ code {
   background: var(--panel-alt);
 }
 
+.detail__body h2,
+.detail__body h3,
+.detail__body h4 {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.detail__body ul {
+  padding-left: 1.1rem;
+}
+
+.detail__body li {
+  margin-bottom: 0.4rem;
+  color: var(--muted);
+}
+
 .detail::before {
   content: "";
   position: absolute;
@@ -428,19 +386,62 @@ code {
   pointer-events: none;
 }
 
-.detail__body h2,
-.detail__body h3,
-.detail__body h4 {
-  margin: 1.25rem 0 0.5rem;
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  padding: 1rem;
+  z-index: 10;
 }
 
-.detail__body ul {
-  padding-left: 1.1rem;
+.overlay[hidden] {
+  display: none;
 }
 
-.detail__body li {
-  margin-bottom: 0.4rem;
-  color: var(--muted);
+.overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.overlay__panel {
+  position: relative;
+  width: min(960px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: 8px 8px 0 rgba(76, 79, 105, 0.35);
+  transform: translateY(20px);
+  animation: slideUp 220ms ease-out forwards;
+}
+
+.overlay__panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.overlay-open .page {
+  filter: blur(4px);
+  transition: filter 160ms ease;
 }
 
 .footer {

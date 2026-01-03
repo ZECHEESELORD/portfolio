@@ -87,7 +87,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
       for (const entry of index) {
         await loadPost(entry);
       }
-      setStatus(`Loaded ${postsCache.size} build${postsCache.size === 1 ? "" : "s"}.`, "ok");
+      setStatus(`Loaded ${postsCache.size} project${postsCache.size === 1 ? "" : "s"}.`, "ok");
     } catch (error) {
       console.error(error);
       setStatus("Failed to load posts. Check console and paths. Falling back to sample.", "error");
@@ -119,7 +119,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
       postsCache.set(post.slug, post);
       renderTile(post);
     });
-    setStatus(`Loaded ${postsCache.size} sample build${postsCache.size === 1 ? "" : "s"}.`, "ok");
+    setStatus(`Loaded ${postsCache.size} sample project${postsCache.size === 1 ? "" : "s"}.`, "ok");
   }
 
   function parseFrontmatter(text) {
