@@ -1,4 +1,39 @@
-(() => {
+﻿(() => {
+  const EMBEDDED_POSTS = [
+    {
+      slug: "skyforge",
+      file: "skyforge.md",
+      text: `---
+title: Skyforge Render Engine
+image: ../assets/skyforge-cover.svg
+published: 2024-11-18
+---
+
+## Challenge
+Build a performant rendering pipeline for a multiplayer Minecraft realm that could replay world events smoothly while capturing cinematic fly-throughs.
+
+## Approach
+- Prototyped a chunk-streaming layer that reads region files ahead of the camera path.
+- Batched block updates into mesh layers (solid, translucent, emissive) to keep the GPU state predictable.
+- Added a lightweight scripting API for camera rails so creators can choreograph shots without touching code.
+
+## Highlights
+1. 120+ FPS in crowded hubs with animated armor stands and particle-heavy scenes.
+2. Deterministic replays: camera rails and events are serialized so shots remain frame-accurate between edits.
+3. Diegetic HUD: block-style lower thirds and timeline overlays that match the Minecraft aesthetic.
+
+## Tech Stack
+- Kotlin + Fabric for ingestion hooks
+- Rust worker for mesh baking
+- GLSL for the custom lighting pass
+- Python notebooks for profiling and telemetry reviews
+
+## What I'd Improve Next
+Add a real-time GI probe for interiors and ship a web viewer so clients can scrub camera rails in-browser.
+`,
+    },
+  ];
+
   const gridEl = document.querySelector("#projectGrid");
   const detailPanel = document.querySelector("#detailPanel");
   const detailContent = document.querySelector("#detailContent");
@@ -6,6 +41,7 @@
   const detailDate = document.querySelector("#detailDate");
   const statusEl = document.querySelector("#statusMessage");
   const postsCache = new Map();
+  const isFileProtocol = window.location.protocol === "file:";
 
   const scrollButtons = document.querySelectorAll("[data-scroll]");
   scrollButtons.forEach((btn) => {
@@ -27,7 +63,16 @@
   });
 
   async function boot() {
-    setStatus("Loading projects…");
+    if (isFileProtocol) {
+      setStatus(
+        "file:// blocks fetch. Showing embedded sample - run a local server for your own posts.",
+        "warn"
+      );
+      loadEmbeddedPosts();
+      return;
+    }
+
+    setStatus("Loading projects...");
     try {
       const index = await fetchJson("posts/index.json");
       if (!Array.isArray(index) || !index.length) {
@@ -40,7 +85,8 @@
       setStatus(`Loaded ${postsCache.size} build${postsCache.size === 1 ? "" : "s"}.`, "ok");
     } catch (error) {
       console.error(error);
-      setStatus("Failed to load posts. Check console and paths.", "error");
+      setStatus("Failed to load posts. Check console and paths. Falling back to sample.", "error");
+      loadEmbeddedPosts();
     }
   }
 
@@ -56,17 +102,19 @@
     const res = await fetch(path);
     if (!res.ok) throw new Error(`Unable to fetch ${path} (${res.status})`);
     const text = await res.text();
-    const { meta, content } = parseFrontmatter(text);
-    const post = {
-      slug: entry.slug || meta.title || path,
-      title: meta.title || "Untitled build",
-      image: meta.image || "",
-      published: meta.published || "",
-      content: content.trim(),
-      sourcePath: path,
-    };
+    const post = buildPost(entry, text, path);
     postsCache.set(post.slug, post);
     renderTile(post);
+  }
+
+  function loadEmbeddedPosts() {
+    EMBEDDED_POSTS.forEach((entry) => {
+      const path = entry.file ? `posts/${entry.file}` : "posts/embedded.md";
+      const post = buildPost(entry, entry.text, path);
+      postsCache.set(post.slug, post);
+      renderTile(post);
+    });
+    setStatus(`Loaded ${postsCache.size} sample build${postsCache.size === 1 ? "" : "s"}.`, "ok");
   }
 
   function parseFrontmatter(text) {
@@ -83,6 +131,20 @@
     });
     const content = text.slice(frontmatterMatch[0].length);
     return { meta, content };
+  }
+
+  function buildPost(entry, text, path) {
+    const { meta, content } = parseFrontmatter(text);
+    const base = new URL(path, window.location.href);
+    const image = meta.image ? new URL(meta.image, base).href : "";
+    return {
+      slug: entry.slug || meta.title || path,
+      title: meta.title || "Untitled build",
+      image,
+      published: meta.published || "",
+      content: content.trim(),
+      sourcePath: path,
+    };
   }
 
   function renderTile(post) {
