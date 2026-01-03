@@ -242,16 +242,19 @@ code {
   inset: auto 0 0 0;
   padding: 1rem;
   background: linear-gradient(180deg, transparent 0%, rgba(12, 12, 12, 0.9) 90%);
+  color: #eff1f5;
 }
 
 .tile__title h3 {
   margin: 0;
   font-size: 1.1rem;
+  color: #eff1f5;
 }
 
 .tile__title p {
   margin-top: 0.35rem;
   font-size: 0.95rem;
+  color: #e6e9ef;
 }
 
 .status {
@@ -331,11 +334,13 @@ code {
 .detail__meta {
   position: relative;
   z-index: 1;
+  color: #eff1f5;
 }
 
 .detail__hero h3 {
   font-size: 1.6rem;
   margin-top: 0.3rem;
+  color: #eff1f5;
 }
 
 .detail__close {
