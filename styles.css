@@ -151,11 +151,9 @@ code {
   border-color: #5865f2;
 }
 
-.button .icon {
-  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "Segoe UI Symbol", "Monocraft", monospace;
-  font-weight: 900;
-  margin-right: 0.4rem;
-  font-size: 1rem;
+.button,
+.button:visited {
+  text-decoration: none;
 }
 
 .button:hover {
