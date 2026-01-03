@@ -206,7 +206,7 @@ code {
   background: var(--cover, var(--panel));
   background-size: cover;
   background-position: center;
-  border-radius: 6px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
@@ -399,9 +399,10 @@ code {
 .overlay {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-items: end center;
-  padding: 1rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
   z-index: 10;
 }
 
@@ -418,16 +419,16 @@ code {
 
 .overlay__panel {
   position: relative;
-  width: min(960px, 100%);
+  width: min(1100px, 100%);
   max-height: 90vh;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px 10px 0 0;
+  border-radius: 16px 16px 0 0;
   box-shadow:
     0 22px 40px rgba(76, 79, 105, 0.35),
     8px 8px 0 rgba(76, 79, 105, 0.25);
-  transform: translateY(16px);
-  animation: slideUp 220ms ease-out forwards;
+  transform: translateY(100%);
+  animation: slideUp 360ms cubic-bezier(0.7, 0, 0.17, 1) forwards;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -447,7 +448,7 @@ code {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(100%);
   }
   to {
     opacity: 1;
