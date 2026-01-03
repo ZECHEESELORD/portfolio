@@ -444,7 +444,7 @@ code {
 }
 
 .footer {
-  padding: 1.5rem 0 2rem;
+  padding: 0.75rem 0 1rem;
   color: var(--muted);
   border-top: 1px solid var(--border);
 }
