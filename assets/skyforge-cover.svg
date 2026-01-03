@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Minecraft build cover</title>
+  <desc id="desc">Pixel-styled landscape with blocky hills and a sunrise.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#7ec4ff"/>
+      <stop offset="50%" stop-color="#9fe5ff"/>
+      <stop offset="100%" stop-color="#f6fff2"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffd76f"/>
+      <stop offset="100%" stop-color="#ffb347"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#sky)"/>
+  <rect y="210" width="640" height="150" fill="#3c8b3e"/>
+  <rect y="250" width="640" height="110" fill="#2f6b2f"/>
+  <rect y="300" width="640" height="60" fill="#274f27"/>
+  <rect x="420" y="90" width="70" height="20" fill="#fff6d5"/>
+  <rect x="430" y="110" width="60" height="20" fill="#ffe5a0"/>
+  <rect x="440" y="130" width="50" height="20" fill="#ffd76f"/>
+  <rect x="350" y="170" width="120" height="40" fill="#ffb347"/>
+  <rect x="0" y="210" width="640" height="6" fill="#4fa24d"/>
+  <rect x="0" y="250" width="640" height="6" fill="#3c8b3e"/>
+  <rect x="0" y="300" width="640" height="6" fill="#2f6b2f"/>
+  <rect x="460" y="190" width="90" height="40" fill="#45722c"/>
+  <rect x="130" y="180" width="110" height="50" fill="#4fa24d"/>
+  <rect x="150" y="160" width="70" height="30" fill="#5bb25b"/>
+  <rect x="60" y="220" width="100" height="40" fill="#4b8634"/>
+  <rect x="70" y="200" width="70" height="25" fill="#5fae52"/>
+  <rect x="250" y="210" width="110" height="50" fill="#4fa24d"/>
+  <rect x="270" y="190" width="70" height="30" fill="#5bb25b"/>
+  <rect x="310" y="240" width="50" height="25" fill="#3d7130"/>
+  <rect x="500" y="230" width="80" height="45" fill="#3d7130"/>
+  <rect x="520" y="210" width="40" height="25" fill="#4fa24d"/>
+  <rect x="90" y="130" width="40" height="40" fill="#7b5d3c"/>
+  <rect x="90" y="170" width="40" height="10" fill="#5a422b"/>
+  <rect x="100" y="115" width="20" height="20" fill="#4c8e2f"/>
+  <rect x="450" y="150" width="30" height="60" fill="#6c4b2f"/>
+  <rect x="445" y="140" width="40" height="15" fill="#4c8e2f"/>
+  <rect x="230" y="140" width="40" height="60" fill="#6c4b2f"/>
+  <rect x="220" y="130" width="60" height="15" fill="#4c8e2f"/>
+  <rect x="280" y="120" width="40" height="60" fill="#6c4b2f"/>
+  <rect x="270" y="110" width="60" height="15" fill="#4c8e2f"/>
+  <rect x="320" y="150" width="40" height="60" fill="#6c4b2f"/>
+  <rect x="310" y="140" width="60" height="15" fill="#4c8e2f"/>
+  <rect x="380" y="170" width="40" height="60" fill="#6c4b2f"/>
+  <rect x="370" y="160" width="60" height="15" fill="#4c8e2f"/>
+  <rect x="40" y="280" width="560" height="80" fill="#2b2b2b" opacity="0.25"/>
+</svg>

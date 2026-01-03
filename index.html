@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minecraft Render Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/marked.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="sky"></div>
+  <div class="fog"></div>
+  <header class="hero">
+    <div class="hero__text">
+      <p class="eyebrow">Minecraft Developer · Render Case Studies</p>
+      <h1>Chunk by Chunk</h1>
+      <p class="lede">Playable tech write-ups for custom renderers, replays, and tooling built for creators and servers.</p>
+      <div class="hero__actions">
+        <button class="button button--solid" data-scroll="#projects">Browse builds</button>
+        <button class="button button--ghost" data-scroll="#about">About this reel</button>
+      </div>
+    </div>
+    <div class="hero__frame">
+      <div class="hero__card">
+        <div class="pixel-border">
+          <p>Lighting pass: emissive · translucent · sky</p>
+          <p>Replay: deterministic rail</p>
+          <p>FPS @ hub: 120+</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="projects" class="section">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Case studies</p>
+          <h2>Choose a world</h2>
+          <p class="lede">Each tile is sourced from a markdown file with its own cover art and story.</p>
+        </div>
+        <div id="statusMessage" class="status">Loading projects…</div>
+      </div>
+      <div id="projectGrid" class="grid"></div>
+    </section>
+
+    <section id="detailPanel" class="detail" hidden>
+      <div class="detail__hero">
+        <div class="detail__mask"></div>
+        <div class="detail__meta">
+          <p class="eyebrow" id="detailDate"></p>
+          <h3 id="detailTitle"></h3>
+        </div>
+        <button class="button button--solid detail__close" type="button">Back to builds</button>
+      </div>
+      <article id="detailContent" class="detail__body"></article>
+    </section>
+
+    <section id="about" class="section section--about">
+      <div>
+        <p class="eyebrow">Workflow</p>
+        <h2>Markdown-powered, GitHub Pages-ready</h2>
+        <p class="lede">Drop markdown into <code>posts/</code>, list it in <code>posts/index.json</code>, and ship to GitHub Pages. Covers and titles are pulled from each file’s front matter.</p>
+      </div>
+      <div class="about__list">
+        <div class="about__card">
+          <p class="eyebrow">Styling</p>
+          <p>Monocraft for headings, a clean body typeface for readability, and blocky shadows inspired by Minecraft UI.</p>
+        </div>
+        <div class="about__card">
+          <p class="eyebrow">Rendering</p>
+          <p>Client-side markdown rendering powered by <code>marked</code>, with graceful fallback if front matter is missing.</p>
+        </div>
+        <div class="about__card">
+          <p class="eyebrow">Structure</p>
+          <p>Uses simple static assets only—ideal for GitHub Pages without a build step.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Ready for your next build. Swap in Monocraft at <code>fonts/</code> and add more markdown files to expand the grid.</p>
+  </footer>
+</body>
+</html>
