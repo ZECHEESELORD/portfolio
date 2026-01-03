@@ -15,12 +15,12 @@
   <div class="page">
     <header class="hero">
       <div class="hero__text">
-        <p class="eyebrow">Minecraft Developer · Render Case Studies</p>
-        <h1>Chunk by Chunk</h1>
-        <p class="lede">Playable tech write-ups for custom renderers, replays, and tooling built for creators and servers.</p>
+        <p class="eyebrow">ZECHEESELORD</p>
+        <h1>ZECHEESELORD Portfolio</h1>
+        <p class="lede">Selected case studies in Minecraft rendering, tooling, and cinematic capture.</p>
         <div class="hero__actions">
-          <button class="button button--solid" data-scroll="#projects">Browse builds</button>
-          <button class="button button--ghost" data-scroll="#projects">View tiles</button>
+          <button class="button button--solid" data-scroll="#projects">View case studies</button>
+          <button class="button button--ghost" data-scroll="#projects">Scroll to grid</button>
         </div>
       </div>
     </header>
@@ -29,28 +29,30 @@
       <section id="projects" class="section">
         <div class="section__head">
           <div>
-            <p class="eyebrow">Case studies</p>
-            <h2>Choose a world</h2>
-            <p class="lede">Playable showcases of client worlds, cinematic rails, and performance tooling.</p>
+            <p class="eyebrow">Selected Case Studies</p>
+            <h2>Render & Tools Work</h2>
+            <p class="lede">Client worlds, rails, and render pipelines shipped with a Minecraft-native feel.</p>
           </div>
           <div id="statusMessage" class="status">Loading projects...</div>
         </div>
         <div id="projectGrid" class="grid"></div>
       </section>
-
-      <section id="detailPanel" class="detail" hidden>
-        <div class="detail__hero">
-          <div class="detail__mask"></div>
-          <div class="detail__meta">
-            <p class="eyebrow" id="detailDate"></p>
-            <h3 id="detailTitle"></h3>
-          </div>
-          <button class="button button--solid detail__close" type="button">Back to builds</button>
-        </div>
-        <article id="detailContent" class="detail__body"></article>
-      </section>
-
     </main>
+  </div>
+
+  <div id="detailOverlay" class="overlay" hidden>
+    <div class="overlay__backdrop"></div>
+    <div class="overlay__panel">
+      <div class="detail__hero">
+        <div class="detail__mask"></div>
+        <div class="detail__meta">
+          <p class="eyebrow" id="detailDate"></p>
+          <h3 id="detailTitle"></h3>
+        </div>
+        <button class="button button--solid detail__close" type="button">Close</button>
+      </div>
+      <article id="detailContent" class="detail__body"></article>
+    </div>
   </div>
 
   <footer class="footer">

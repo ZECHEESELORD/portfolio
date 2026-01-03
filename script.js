@@ -35,7 +35,8 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
   ];
 
   const gridEl = document.querySelector("#projectGrid");
-  const detailPanel = document.querySelector("#detailPanel");
+  const detailOverlay = document.querySelector("#detailOverlay");
+  const detailPanel = document.querySelector("#detailOverlay .overlay__panel");
   const detailContent = document.querySelector("#detailContent");
   const detailTitle = document.querySelector("#detailTitle");
   const detailDate = document.querySelector("#detailDate");
@@ -56,8 +57,12 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
     .querySelector(".detail__close")
     ?.addEventListener("click", () => closeDetail(true));
 
+  detailOverlay?.querySelector(".overlay__backdrop")?.addEventListener("click", () => {
+    closeDetail(false);
+  });
+
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !detailPanel.hidden) {
+    if (event.key === "Escape" && detailOverlay && !detailOverlay.hidden) {
       closeDetail(true);
     }
   });
@@ -176,8 +181,8 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
 
   function openPost(slug) {
     const post = postsCache.get(slug);
-    if (!post) return;
-    detailPanel.hidden = false;
+    if (!post || !detailOverlay) return;
+    detailOverlay.hidden = false;
     detailPanel.style.setProperty(
       "--hero",
       post.image ? `url('${normalizePath(post.image)}')` : ""
@@ -190,13 +195,15 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
     } else {
       detailContent.textContent = post.content || "";
     }
-    detailPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-    history.replaceState(null, "", "#projects");
+    document.body.classList.add("overlay-open");
+    detailContent.scrollTop = 0;
   }
 
   function closeDetail(scrollToGrid) {
-    detailPanel.hidden = true;
+    if (!detailOverlay) return;
+    detailOverlay.hidden = true;
     detailContent.innerHTML = "";
+    document.body.classList.remove("overlay-open");
     if (scrollToGrid) {
       gridEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
