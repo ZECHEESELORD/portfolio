@@ -33,6 +33,12 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
 }
 
 .sky,
@@ -354,21 +360,8 @@ code {
 .section--about {
   display: grid;
   gap: 1rem;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1fr;
   align-items: start;
-}
-
-.about__list {
-  display: grid;
-  gap: 1rem;
-}
-
-.about__card {
-  border: 1px solid var(--border);
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
 }
 
 .footer {
