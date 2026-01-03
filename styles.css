@@ -40,9 +40,9 @@ body {
 
 .page {
   width: 100%;
-  max-width: 1220px;
-  margin: 0 auto;
-  padding: 1.5rem 1.75rem;
+  max-width: 100%;
+  margin: 0;
+  padding: clamp(1rem, 3vw, 2rem);
 }
 
 main {
@@ -84,7 +84,7 @@ code {
 }
 
 .hero__text {
-  max-width: 720px;
+  max-width: 960px;
 }
 
 .hero__actions {
@@ -174,11 +174,12 @@ code {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+  width: 100%;
 }
 
 .tile {
   position: relative;
-  height: 240px;
+  height: 260px;
   border: 1px solid var(--border);
   background: var(--cover, var(--panel));
   background-size: cover;
