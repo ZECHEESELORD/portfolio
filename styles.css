@@ -197,7 +197,7 @@ code {
 .grid {
   margin-top: 1.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.25rem;
 }
 
@@ -395,6 +395,10 @@ a {
   .section--about {
     grid-template-columns: 1fr;
   }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -410,5 +414,9 @@ a {
 
   .detail {
     margin: 1.5rem 1rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
