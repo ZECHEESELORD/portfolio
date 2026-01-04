@@ -32,6 +32,29 @@ Build a performant rendering pipeline for a multiplayer Minecraft realm that cou
 Add a real-time GI probe for interiors and ship a web viewer so clients can scrub camera rails in-browser.
 `,
     },
+    {
+      slug: "chaotic",
+      file: "chaotic.md",
+      text: `---
+title: Chaotic: N-Link Pendulum
+image: ../assets/skyforge-cover.svg
+published: 2025-11-18
+github: https://github.com/ZECHEESELORD/chaotic-pendulum
+---
+
+## Overview
+A discrete variational simulation of an N-link pendulum adapted for Minecraft's tick loop. Focused on stability and visual plausibility over analytical perfection.
+
+## Highlights
+- Verlet integration with substepping to keep chaotic motion stable at 20 TPS.
+- Position-based constraints to avoid energy drift and tunneling.
+- Affine world transform so physics runs in floating point while rendering stays on the voxel grid.
+
+## Demos
+- High-frequency substep clips for long chains.
+- World-space rendering with anchored transforms.
+`,
+    },
   ];
 
   const gridEl = document.querySelector("#projectGrid");
@@ -201,6 +224,11 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
       detailContent.innerHTML = window.marked.parse(post.content || "");
     } else {
       detailContent.textContent = post.content || "";
+    }
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([detailContent]).catch((err) =>
+        console.error("MathJax render error", err)
+      );
     }
     document.body.classList.add("overlay-open");
     detailContent.scrollTop = 0;

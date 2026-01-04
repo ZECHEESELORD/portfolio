@@ -390,6 +390,8 @@ code {
   line-height: 1.7;
   background: var(--panel-alt);
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 220px;
 }
 
 .detail__body h2,
