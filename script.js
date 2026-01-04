@@ -93,9 +93,7 @@ A discrete variational simulation of an N-link pendulum adapted for Minecraft's 
 
   async function boot() {
     if (isFileProtocol) {
-      setStatus("file:// blocks fetch. Showing embedded project—run a local server for yours.", "warn");
-      loadEmbeddedPosts();
-      return;
+      setStatus("file:// may block markdown fetch. Run a local server for best results.", "warn");
     }
 
     setStatus("Loading projects...");
@@ -111,8 +109,7 @@ A discrete variational simulation of an N-link pendulum adapted for Minecraft's 
       setStatus(`Loaded ${postsCache.size} project${postsCache.size === 1 ? "" : "s"}.`, "ok");
     } catch (error) {
       console.error(error);
-      setStatus("Failed to load posts. Showing embedded project.", "error");
-      loadEmbeddedPosts();
+      setStatus("Failed to load posts. Serve locally (http) to allow markdown fetch.", "error");
     }
   }
 
@@ -131,16 +128,6 @@ A discrete variational simulation of an N-link pendulum adapted for Minecraft's 
     const post = buildPost(entry, text, path);
     postsCache.set(post.slug, post);
     renderTile(post);
-  }
-
-  function loadEmbeddedPosts() {
-    EMBEDDED_POSTS.forEach((entry) => {
-      const path = entry.file ? `posts/${entry.file}` : "posts/embedded.md";
-      const post = buildPost(entry, entry.text, path);
-      postsCache.set(post.slug, post);
-      renderTile(post);
-    });
-    setStatus(`Loaded ${postsCache.size} project${postsCache.size === 1 ? "" : "s"} (embedded).`, "ok");
   }
 
   function parseFrontmatter(text) {
