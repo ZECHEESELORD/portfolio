@@ -2,6 +2,7 @@
 title: Skyforge Render Engine
 image: ../assets/skyforge-cover.svg
 published: 2024-11-18
+github: https://github.com/ZECHEESELORD/skyforge
 ---
 
 ## Challenge
