@@ -14,5 +14,13 @@
   {
     "slug": "fulcrum",
     "file": "fulcrum.md"
+  },
+  {
+    "slug": "shapey",
+    "file": "shapey.md"
+  },
+  {
+    "slug": "sprite",
+    "file": "sprite.md"
   }
 ]
