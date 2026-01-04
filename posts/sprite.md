@@ -1,8 +1,8 @@
 ---
 title: Sprite
-image: /assets/sprite/hero.png
+image: https://github.com/user-attachments/assets/2115299c-a04f-4fce-bc59-ce15180f1d2e
 published: 2025-11-10
-github: https://github.com/user-attachments/assets/2115299c-a04f-4fce-bc59-ce15180f1d2e
+github: https://github.com/haroldDOTsh/sprite
 ---
 
 Sprite is a designer facing tool for exploring Minecraft’s modern ability to render **arbitrary vanilla textures** inside chat components, titles, and other Adventure surfaces. Drop it into a modern Paper server and you get a searchable atlas browser plus a texture preview flow that stays current as Mojang ships new assets; it does this **without resource packs**.
