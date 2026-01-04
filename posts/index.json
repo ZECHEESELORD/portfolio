@@ -1,10 +1,18 @@
 [
   {
-    "slug": "skyforge",
-    "file": "skyforge.md"
-  },
-  {
     "slug": "chaotic",
     "file": "chaotic.md"
+  },
+  {
+    "slug": "buh",
+    "file": "buh.md"
+  },
+  {
+    "slug": "fawe",
+    "file": "fawe.md"
+  },
+  {
+    "slug": "fulcrum",
+    "file": "fulcrum.md"
   }
 ]
