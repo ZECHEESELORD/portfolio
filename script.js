@@ -40,6 +40,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
   const detailContent = document.querySelector("#detailContent");
   const detailTitle = document.querySelector("#detailTitle");
   const detailDate = document.querySelector("#detailDate");
+  const detailGithub = document.querySelector("#detailGithub");
   const statusEl = document.querySelector("#statusMessage");
   const postsCache = new Map();
   const isFileProtocol = window.location.protocol === "file:";
@@ -69,10 +70,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
 
   async function boot() {
     if (isFileProtocol) {
-      setStatus(
-        "file:// blocks fetch. Showing embedded sample - run a local server for your own posts.",
-        "warn"
-      );
+      setStatus("file:// blocks fetch. Showing embedded project—run a local server for yours.", "warn");
       loadEmbeddedPosts();
       return;
     }
@@ -90,7 +88,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
       setStatus(`Loaded ${postsCache.size} project${postsCache.size === 1 ? "" : "s"}.`, "ok");
     } catch (error) {
       console.error(error);
-      setStatus("Failed to load posts. Check console and paths. Falling back to sample.", "error");
+      setStatus("Failed to load posts. Showing embedded project.", "error");
       loadEmbeddedPosts();
     }
   }
@@ -119,7 +117,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
       postsCache.set(post.slug, post);
       renderTile(post);
     });
-    setStatus(`Loaded ${postsCache.size} sample project${postsCache.size === 1 ? "" : "s"}.`, "ok");
+    setStatus(`Loaded ${postsCache.size} project${postsCache.size === 1 ? "" : "s"} (embedded).`, "ok");
   }
 
   function parseFrontmatter(text) {
@@ -147,6 +145,7 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
       title: meta.title || "Untitled build",
       image,
       published: meta.published || "",
+      github: meta.github || "",
       content: content.trim(),
       sourcePath: path,
     };
@@ -189,6 +188,14 @@ Add a real-time GI probe for interiors and ship a web viewer so clients can scru
     );
     detailTitle.textContent = post.title;
     detailDate.textContent = post.published || "Captured in-game";
+    if (detailGithub) {
+      if (post.github) {
+        detailGithub.href = post.github;
+        detailGithub.hidden = false;
+      } else {
+        detailGithub.hidden = true;
+      }
+    }
 
     if (window.marked) {
       detailContent.innerHTML = window.marked.parse(post.content || "");
