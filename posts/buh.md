@@ -53,6 +53,9 @@ Most SMP servers are a plugin salad. `buh` is closer to a platform:
   <figure>
     <img src="/assets/buh/transaction_ledger.png" alt="Transaction ledger">
   </figure>
+  <figure>
+    <img src="/assets/buh/server_reboot.png" alt="Server Reboot">
+  </figure>
 </div>
 
 ## Core subsystems
