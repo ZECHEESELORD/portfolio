@@ -1,6 +1,6 @@
 ---
 title: FruitCatch: osu!catch in Minecraft
-image: /assets/fruitcatch/hero.png
+image: /assets/fruitcatch/fruitcatch-10s.gif
 published: 2026-05-10
 github: https://github.com/ZECHEESELORD/FruitCatch
 ---
