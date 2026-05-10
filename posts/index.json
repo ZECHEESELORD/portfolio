@@ -22,5 +22,9 @@
   {
     "slug": "sprite",
     "file": "sprite.md"
+  },
+  {
+    "slug": "fruitcatch",
+    "file": "fruitcatch.md"
   }
 ]
