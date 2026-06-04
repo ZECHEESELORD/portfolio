@@ -3,6 +3,12 @@ title: FruitCatch: osu!catch in Minecraft
 image: /assets/fruitcatch/fruitcatch-10s.gif
 published: 2026-05-10
 github: https://github.com/ZECHEESELORD/FruitCatch
+kind: experiment
+tags: Paper, Game Design, Performance
+role: Solo weekend project. Parser, timing model, input pipeline, audio, and match lifecycle.
+stack: Java 25, Paper, SQLite, Display Entities, ffmpeg / JAVE
+mono: "#f4c542, #e0962a"
+initials: FC
 ---
 
 "FruitCatch" is a small weekend project I decided to create during a particularly slow Saturday afternoon. It's a Paper plugin minigame that runs osu!catch beatmaps inside Minecraft 26.1.2. You're able to throw an actual `.osz` archive into the beatmaps folder, run `/fruitcatch import`, pick a difficulty from an ingame menu, and a solo run plays out on a vanilla display entity playfield. Project is not completed (I would like to implement multiplayer capabilities), so the source code is not available yet.

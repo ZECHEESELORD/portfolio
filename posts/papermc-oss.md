@@ -3,6 +3,12 @@ title: Paper Open Source Work
 image: /assets/papermc-oss/hero.png
 published: 2025-06-26
 github: https://github.com/ZECHEESELORD
+kind: oss
+tags: Paper, Open Source, Packets
+role: Open source contributor. Protocol debugging, patch authoring, and review follow-through.
+stack: Java, Paper, Minecraft protocol, GitHub PRs
+mono: "#b6d4bd, #6f9d78"
+initials: PM
 ---
 
 # Debugging a PLAY -> CONFIG handoff bug across Velocity and Paper

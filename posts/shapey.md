@@ -3,6 +3,12 @@ title: Shapey
 image: /assets/shapey/hero.gif
 published: 2025-06-24
 github: https://github.com/ZECHEESELORD/shapey
+kind: experiment
+tags: Paper, Game Design, Performance
+role: Solo proof-of-concept. Geometry, transform pipeline, and animation.
+stack: Java, Paper, Particles
+mono: "#7aa6e0, #4f7fc4"
+initials: SH
 ---
 
 Shapey is a Minecraft plugin that renders **3D shapes as particles** in real time. It started as an “I can’t sleep, let’s build something mathy” proof-of-concept, but it ended up being a clean little sandbox for 3D transforms, animation, and geometry generation inside a game loop.

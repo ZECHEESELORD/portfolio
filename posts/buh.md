@@ -3,6 +3,11 @@ title: Live Service SMP Experience
 image: /assets/buh/buh.png
 published: 2025-11-23
 github: https://github.com/ZECHEESELORD/buh
+kind: case
+tags: Paper, Server Systems, Packets
+role: Sole engineer. Module system, data layer, stats/combat/item stack, and staff tooling.
+stack: Java, Paper, PacketEvents, Nitrite, MySQL, LuckPerms
+mono: "#aec8b8, #6f9d78"
 ---
 
 `buh` is the live service SMP core I run for my osu friends: one plugin that owns the server experience end to end. The intent is simple: ship features quickly without turning the server into a pile of unrelated mechanics.

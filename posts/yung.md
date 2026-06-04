@@ -3,6 +3,11 @@ title: Porting YUNG's Mods to 1.21.11
 image: /assets/yung/title.png
 published: 2026-06-01
 github: https://github.com/ZECHEESELORD/yung-1.21.11-fabric-ports
+kind: oss
+tags: Fabric, Modding, Open Source
+role: Porting engineer. Shared library migration and downstream adapters.
+stack: Java, Fabric API, Fabric Loader, Mixin, Gradle
+mono: "#9fb9d8, #7f9cc2"
 ---
 
 Eternum leans on YUNG's worldgen mods: Better End Island, Better Strongholds, and YUNG's Bridges, all sitting on top of YUNG API. None of them had a `1.21.11` build yet, so I ported them to Fabric. This is that work, and it's uncommitted: it lives on a working branch (still named `1.21.4`, which tells you where it started) and builds locally against the rest of the stack. "Uncommitted" is the honest label: the code compiles and runs, it just hasn't been cleaned up into something I'd push back to the original repos.

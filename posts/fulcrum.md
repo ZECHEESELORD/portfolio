@@ -3,6 +3,11 @@ title: Fulcrum Network Framework
 image: /assets/fulcrum/hero.png
 published: 2025-06-26
 github: https://github.com/haroldDOTsh/fulcrum
+kind: case
+tags: Paper, Velocity, Networking, Server Systems
+role: Sole engineer. Control plane, proxy layer, runtime, data, and messaging primitives.
+stack: Java 21, Paper, Velocity, Redis, MongoDB, PostgreSQL, FAWE
+mono: "#b6c7d7, #7894b2"
 ---
 
 Fulcrum is my “write (almost) everything in house” Minecraft network project. It is heavily inspired by Hypixel’s ecosystem, but built on modern Paper and Velocity rather than legacy 1.7-era constraints. It’s a systems design lab that also functions as an actual platform: registry, proxy, and runtime processes that coordinate through typed messaging, shared data primitives, and explicit lifecycle rules.

@@ -3,6 +3,11 @@ title: FAWE: 1xN Schematics, Biomes, and a Divide-by-Zero
 image: /assets/fawe/pr3360.png
 published: 2025-10-29
 github: https://github.com/IntellectualSites/FastAsyncWorldEdit/pull/3360
+kind: oss
+tags: Open Source, Performance
+role: External contributor. Diagnosis, fix, and PR through review.
+stack: Java, FastAsyncWorldEdit, WorldEdit
+mono: "#d0d5dc, #9da8b8"
 ---
 
 This is a small fix in a large codebase: a reviewed and merged FAWE patch that prevented a crash on an oddly specific input: **1 x N (or N x 1) schematics that carry biome data**.

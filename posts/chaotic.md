@@ -3,6 +3,11 @@ title: Chaotic N-Link Pendulums
 image: https://github.com/user-attachments/assets/a98025d6-9a80-44f0-99ae-9670e63a9f13
 published: 2025-11-18
 github: https://github.com/ZECHEESELORD/chaotic
+kind: experiment
+tags: Paper, Game Design, Performance
+role: Solo weekend build. Physics core and voxel rendering.
+stack: Java, Paper, PBD, Verlet integration
+mono: "#d5b891, #a97947"
 ---
 
 Chaotic is a real-time **N-link pendulum** simulation rendered directly inside Minecraft. It’s designed as a **chaos showcase** rather than a perfect physics lab: the goal was **stable, visually plausible motion at Minecraft tick rates**, with an implementation that stays clean and extensible.
