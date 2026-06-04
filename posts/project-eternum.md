@@ -2,7 +2,7 @@
 title: Project Eternum S2
 image: /assets/eternum/title.png
 published: 2026-05-10
-github:
+github: https://github.com/haroldDOTsh/eternum
 ---
 
 `Project Eternum (S2)` is a Java 21 Fabric mod targeting Minecraft `1.21.11`. Calling it a mod is technically true and practically misleading- I would classify it more as a custom server platform that happens to ship as a mod: gameplay systems, streamer specific items, Twitch crowd control, ingame guides and changelogs, player tools, moderation, and a real observability stack. It builds on my shared `sh.harold.creative` APIs for data, menus, messages, sound, metrics, and Fabric adapters instead of reinventing those inside every feature.
