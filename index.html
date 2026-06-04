@@ -6,7 +6,7 @@
   <title>ZECHEESELORD's Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -25,6 +25,30 @@
   <script src="script.js" defer></script>
 </head>
 <body>
+  <header class="site-header">
+    <div class="page site-header__inner">
+      <a class="brand" href="#projects" aria-label="ZECHEESELORD portfolio home">
+        <span class="brand__mark">
+          <img src="android-chrome-192x192.png" alt="">
+        </span>
+        <span class="brand__name">
+          ZECHEESELORD
+          <small>Portfolio</small>
+        </span>
+      </a>
+      <nav class="site-header__nav" aria-label="Primary">
+        <a class="site-header__link" href="#projects">Work</a>
+        <a class="button button--ghost button--sm" href="https://github.com/ZECHEESELORD" target="_blank" rel="noopener">
+          <span class="icon-github" aria-hidden="true"></span>
+          GitHub
+        </a>
+        <a class="button button--discord button--sm" href="https://discord.gg/RaAARvxZxh" target="_blank" rel="noopener">
+          Discord
+        </a>
+      </nav>
+    </div>
+  </header>
+
   <div class="page">
     <header class="hero">
       <div class="hero__text">
@@ -33,6 +57,7 @@
         <p class="lede">Case studies in Minecraft systems, tooling, packets, and performance.</p>
         <div class="hero__actions">
           <a class="button button--solid button--github" href="https://github.com/ZECHEESELORD" target="_blank" rel="noopener">
+            <span class="icon-github" aria-hidden="true"></span>
             Visit GitHub
           </a>
           <a class="button button--ghost button--discord" href="https://discord.gg/RaAARvxZxh" target="_blank" rel="noopener">
@@ -52,6 +77,7 @@
           </div>
           <div id="statusMessage" class="status">Loading projects...</div>
         </div>
+        <div id="projectFilters" class="filter" role="group" aria-label="Filter projects by tag"></div>
         <div id="projectGrid" class="grid"></div>
       </section>
     </main>
@@ -74,7 +100,10 @@
           <button class="button button--solid detail__close" type="button">Close</button>
         </div>
       </div>
-      <article id="detailContent" class="detail__body"></article>
+      <div class="detail__layout">
+        <article id="detailContent" class="detail__body"></article>
+        <aside id="detailSidebar" class="detail__side" aria-label="Case study details"></aside>
+      </div>
     </div>
   </div>
 
