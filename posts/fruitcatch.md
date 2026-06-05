@@ -69,7 +69,7 @@ The visual clock (`VisualSongTime`) is a separate object that tracks what the *a
 
 The reason for two clocks is that a 200 ms hitch in the server tick is invisible to the player's audio (it is playing on the client) but very visible to fruit positions if they are redrawn straight off elapsed song time. The visual clock absorbs jitter; the song clock keeps timing honest. Hit detection samples the song clock, never the visual one. That split is the difference between "oh this is correctly timed rhythm" and "ah yes, "rhythm"."
 
-The approach-rate preempt is osu!lazer's range (`PREEMPT_MIN/MID/MAX = 450 / 1200 / 1800 ms`) multiplied by a constant 1.15. The catch hitbox is lazer's catch width multiplied by 1.5 (Both multipliers are named, applied on top of the un-multiplied lazer math, and recoverable.) They exist from a balancing standpoint- Minecraft's "precision"  is a lot coarser than an osu! is, and the input device is a free look camera rather than a tablet. (During testing AR8+ maps were "technically" playable, but were kind of miserable to play.)
+The approach-rate preempt is osu!lazer's range (`PREEMPT_MIN/MID/MAX = 450 / 1200 / 1800 ms`) multiplied by a constant 1.15. The catch hitbox is lazer's catch width multiplied by 1.5 (Both multipliers are named, applied on top of the un-multiplied lazer math, and recoverable.) They exist from a balancing standpoint- Minecraft's "precision" is a lot coarser than an osu! is, and the input device is a free look camera rather than a tablet. (During testing AR8+ maps were "technically" playable, but were kind of miserable to play.)
 
 ## Mouse control through a Minecraft body
 

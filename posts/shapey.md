@@ -13,7 +13,7 @@ initials: SH
 
 Shapey is a Minecraft plugin that renders **3D shapes as particles** in real time. It started as an “I can’t sleep, let’s build something mathy” proof-of-concept, but it ended up being a clean little sandbox for 3D transforms, animation, and geometry generation inside a game loop.
 
-The long term ambition is obvious: use this as a stepping stone toward **rendering arbitrary `.obj` models** in-game.
+The long term goal is to use this as a stepping stone toward rendering arbitrary `.obj` models ingame.
 
 ## What it does
 - Spawns persistent particle “objects” (cube, sphere, torus) with configurable scale, rotation, and resolution.
@@ -38,7 +38,7 @@ A `GeometryFactory` generates point clouds for primitives (cube, sphere, torus) 
 - resolution (density)
 - base rotation
 
-The design goal is practical: predictable point ordering and stable density controls so animation and morphing don’t become guesswork.
+The design goal is predictable point ordering and stable density controls, so animation and morphing don’t become guesswork.
 
 ### Transformation pipeline
 Every point runs through the same pipeline:
@@ -47,7 +47,7 @@ Every point runs through the same pipeline:
 2. **Rotation** using explicit per-axis matrix multiplication (Euler angles)  
 3. **Translation** to world position  
 
-Rotation order is applied consistently (roll, pitch, yaw), and the math stays explicit on purpose: easy to reason about, easy to debug.
+Rotation order is applied consistently (roll, pitch, yaw), and the math stays explicit on purpose- explicit per-axis matrices are easy to step through when a rotation comes out wrong.
 
 ### Morphing
 Morphing is implemented by **linear interpolation** between corresponding points in two point arrays.
@@ -60,7 +60,7 @@ That limitation is a feature for now: it keeps the core predictable and makes fu
 ## Why this is in my portfolio
 
 This is a small project, but it demonstrates the skills I actually lean on in bigger systems:
-- translating math into working code under a real-time loop
+- translating math into working code under a realtime loop
 - building a minimal but coherent architecture (instances, manager, factory)
 - implementing real life math and physics for the best block game experience
 

@@ -10,7 +10,7 @@ stack: Java, Paper, PacketEvents, Nitrite, MySQL, LuckPerms
 mono: "#aec8b8, #6f9d78"
 ---
 
-`buh` is the live service SMP core I run for my osu friends: one plugin that owns the server experience end to end. The intent is simple: ship features quickly without turning the server into a pile of unrelated mechanics.
+`buh` is the live service SMP core I run for my osu friends: one plugin that owns the server experience end to end. The intent is to ship features quickly without turning the server into a pile of unrelated mechanics.
 
 This is production code in the only way that matters: real players; real menus; real item edge cases; real “why is this broken at 1am” debugging.
 

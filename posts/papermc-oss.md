@@ -1,7 +1,7 @@
 ---
 title: Paper Open Source Work
 image: /assets/papermc-oss/hero.png
-published: 2025-06-26
+published: 2026-04-26
 github: https://github.com/ZECHEESELORD
 kind: oss
 tags: Paper, Open Source, Packets

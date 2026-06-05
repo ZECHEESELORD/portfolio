@@ -216,8 +216,6 @@ code,
 .button:focus-visible,
 .chip:focus-visible,
 .card:focus-visible,
-.site-header__link:focus-visible,
-.brand:focus-visible,
 .lightbox__close:focus-visible {
   outline: none;
   box-shadow:
@@ -257,85 +255,6 @@ code,
   padding: 9px 14px;
   font-size: 0.78rem;
   gap: 7px;
-}
-
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  background: color-mix(in srgb, var(--base) 88%, transparent);
-  backdrop-filter: blur(8px);
-  box-shadow: var(--shadow-sm);
-}
-
-.site-header__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 70px;
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-}
-
-.brand__mark {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  background: var(--gold-soft);
-  box-shadow: var(--bevel-strong), var(--shadow-sm);
-}
-
-.brand__mark img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-
-.brand__name {
-  font-family: var(--font-pixel);
-  font-weight: 800;
-  font-size: 1.06rem;
-  letter-spacing: 0.04em;
-  color: var(--fg-1);
-}
-
-.brand__name small {
-  display: block;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
-  color: var(--gold-deep);
-  text-transform: uppercase;
-}
-
-.site-header__nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.site-header__link {
-  font-family: var(--font-pixel);
-  font-weight: 700;
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--fg-3);
-  text-decoration: none;
-  padding: 8px 12px;
-  transition: color 150ms ease, background-color 150ms ease;
-}
-
-.site-header__link:hover {
-  color: var(--fg-1);
-  background: var(--well);
 }
 
 .hero {
@@ -1219,23 +1138,6 @@ code,
 }
 
 @media (max-width: 720px) {
-  .site-header__inner {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-    padding-top: 14px;
-    padding-bottom: 14px;
-  }
-
-  .site-header__nav {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .site-header__nav .button {
-    flex: 1 1 150px;
-  }
-
   .hero__actions {
     flex-direction: column;
     width: 100%;
@@ -1266,10 +1168,6 @@ code,
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;
-  }
-
-  .site-header__link {
-    display: none;
   }
 
   .overlay__panel {

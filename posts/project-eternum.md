@@ -47,7 +47,7 @@ The plumbing under that is Twitch EventSub, and the interesting part is that Eve
 
 ### Farming tools
 
-One of our streamers was a avid Hypixel Skyblock player, so a set of "Hypixel Styled Farming tools" was requested. It needed to be balanced: fast enough to feel special, but still constrained by direction, storage, durability, and survival cost.
+One of our streamers was an avid Hypixel Skyblock player, so a set of "Hypixel Styled Farming tools" was requested. It needed to be balanced: fast enough to feel special, but still constrained by direction, storage, durability, and survival cost.
 
 <div class="gallery">
   <figure>
@@ -82,7 +82,7 @@ The poison items are weapon augments/consumables. I tried to use this request as
 
 ## okay... why a mod and not a plugin?
 
-Mostly a pragmatic decision. In iteration 1 of Project Eternum (Q4 2024), we learned that content creators play a lot. It was very hard to match development velocity to player progression velocity while still preserving a high level of quality. The decision to use Fabric for season 2 was mostly to allow for more tangental content- cooking, flying, additional mobs, more biomes. All while keeping the "central" content + story development progressing at a comfortable speed.  
+Mostly a pragmatic decision. In iteration 1 of Project Eternum (Q4 2024), we learned that content creators play a lot. It was very hard to match development velocity to player progression velocity while still preserving a high level of quality. The decision to use Fabric for season 2 was mostly to allow for more tangential content- cooking, flying, additional mobs, more biomes. All while keeping the "central" content + story development progressing at a comfortable speed.
 
 ## How it was built
 
