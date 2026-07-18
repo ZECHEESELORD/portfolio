@@ -1019,6 +1019,59 @@ code,
   transform: translateY(0);
 }
 
+.gallery--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gallery--captioned figure {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gallery--captioned img,
+.gallery--captioned video {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  box-shadow: none;
+  background: #11131c;
+}
+
+.gallery--captioned:not(.gallery--ui) img,
+.gallery--captioned video {
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+.gallery--ui img {
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: var(--well);
+}
+
+.gallery--captioned figcaption,
+.gallery--captioned .hover-caption figcaption {
+  position: static;
+  inset: auto;
+  flex: 1;
+  padding: 0.75rem 0.85rem;
+  background: var(--card);
+  color: var(--fg-2);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.gallery--captioned .hover-caption:hover figcaption,
+.gallery--captioned .hover-caption:focus-within figcaption {
+  opacity: 1;
+  transform: none;
+}
+
 .lightbox {
   position: fixed;
   inset: 0;
