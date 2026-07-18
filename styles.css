@@ -754,6 +754,10 @@ code,
   flex-wrap: wrap;
 }
 
+.detail__actions .button[hidden] {
+  display: none;
+}
+
 .detail__actions .button {
   min-height: 42px;
 }
@@ -770,6 +774,7 @@ code,
 
 .detail__body {
   grid-area: body;
+  min-width: 0;
   width: 100%;
   max-width: var(--case-wide-width);
   margin: 0;
