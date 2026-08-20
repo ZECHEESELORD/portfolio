@@ -5,81 +5,102 @@ published: 2026-06-17
 github: https://github.com/haroldDOTsh/fulcrum
 kind: case
 tags: Paper, Velocity, Agones, Kafka, Distributed Systems
-role: Sole engineer. Kernel ontology, control plane on a log substrate, data-authority model, two-layer session runtime, and the capability system.
+role: Sole engineer.
 stack: Java 26, Paper, Velocity, Agones, Kafka, Cassandra, PostgreSQL, Valkey
 mono: "#b6c7d7, #7894b2"
 ---
 
-Fulcrum is my attempt at a Minecraft network platform that does not fight its own infrastructure. The version I am building now is a complete ground-up rebuild, and it shares almost nothing with the first one except the name and the ambition. v1 was a toy- a registry that brokered "slots" onto shared Paper runtimes, a hand rolled message bus over Redis, and a player object that most features reached straight into. It ran. It also rebuilt a pile of infrastructure that already existed, and inherited every problem that comes with putting many games in one JVM. I learned a lot writing it, most of it about what not to do a second time.
+Fulcrum is my second attempt at a Minecraft network platform. The first version worked just well enough to teach me which parts I had accidentally reinvented.
 
-v2 starts from a narrower premise: Fulcrum should own the platform boundary- placement, routing, capacity, data authority, content resolution, effects, traceability- and almost nothing else. An author declares what an experience *is*; the substrate decides where it runs and how its state moves.
+v1 brokered game slots onto shared Paper processes, moved messages through a hand-rolled Redis bus, and exposed one player object that every feature eventually reached into. It ran real code. It also coupled matches inside one JVM, made state ownership fuzzy, and gave me several exciting ways to build infrastructure that already existed elsewhere.
 
-## The hack we decided not to inherit
+v2 is a ground-up rebuild. It handles placement, routing, capacity, data ownership, content versions, and cross-server effects. Game code gets a small host API and stays close to Paper.
 
-Out of 80% guesswork and 20% evidence, we can assume Hypixel ran many minigame matches inside one long-lived JVM. Several games, one process, and a bespoke system to keep them from stepping on each other. This was a reasonable call for roughly 2013. A fresh server JVM was slow to start, Bukkit took its sweet time loading a world, and machines were expensive enough that dedicating one to a single two-team match would have been absurd. So you amortized: keep one fat process warm and multiplex matches onto it.
+## One match, one Paper process
 
-The bill for that arrives later. One match's main thread stall becomes every co-located match's stall. Isolation between games turns into a classloader problem and a standing prayer that nobody leaks state across the slot boundary. And you end up hand building your own pool, warm buffer, placement, and rollout logic- which is to say, rebuilding a chunk of what Kubernetes already does, by hand, inside a Minecraft plugin.
+Out of roughly 80% guesswork and 20% public evidence, I assume Hypixel historically multiplexed several minigame matches inside long-lived Bukkit processes. Around 2013, that was a sensible optimization. Fresh server JVMs started slowly, world loading was expensive, and wasting a whole process on a short match would have been painful.
 
-The multiplexing wasn't really what anyone set out to build. It was a workaround for slow, expensive instances that stuck around long enough to start looking like architecture.
+Once several matches share a process, one main-thread stall hits all of them. Game isolation becomes a classloader and lifecycle problem. The network also needs custom pooling, warm capacity, placement, and rollout logic inside the Minecraft stack.
 
-A lot of that has changed since then. Cloud got cheaper. Kubernetes and Agones give you fleets, warm buffers, allocation, health, and rollout- most of what that hand built controller was doing in the first place. Minestom exists and boots a server in a fraction of the time Bukkit needs. Paper in front of a warm fleet- and maybe, later, an AOT cache to make each boot cheaper- gets a fresh per-match JVM cheap enough that the multiplexing trick stops really paying for itself. So v2 takes the isolation boundary the platform is already trying to give you. The unit is the Pod. One Paper Instance runs exactly one Session. There's no in-JVM match multiplexing- that's a hard line for this version, and the module boundaries are set up so that adding it back would mean fighting against them.
+Today, Kubernetes and Agones provide fleets, health checks, allocation, warm buffers, and rollouts. Fulcrum uses that process boundary directly:
 
-## Startup cost: warm fleets, and a cache we're exploring
+```text
+One Paper Instance = One Session = One Pod
+```
 
-The reason pooling existed at all was cold start cost, so a one-Session-per-Instance approach has to answer for cold start rather than wave at it. The current answer is deliberately boring: prebooted warm Agones fleets. You keep a buffer of Ready Paper Instances per capacity class, allocate out of the buffer, and let Agones refill behind you. A player never waits on a JVM to start, because the JVM started a minute ago.
+A Bed Wars match can leak, stall, or crash while the next six matches keep running in their own processes. Each instance has one session lifecycle and one resolved content manifest.
 
-The optimization I keep coming back to on top of that is the JDK's AOT cache. A recent JDK can record the classes an application loads and links- and, since the method profiling work, the hot method profiles too- into an ahead-of-time cache, the Project Leyden line of work that grew out of AppCDS. For a fleet that boots the same Paper image thousands of times, shaving warmup off every start adds up in machine count. What makes it appealing is stability: an AOT cache only changes how fast the JVM gets going, not whether it ends up correct. It's a speedup you can switch off and still have the same server underneath.
+## Cold starts
 
-The more aggressive option is CRaC- Coordinated Restore at Checkpoint, the OpenJDK project built on CRIU that snapshots an already warmed JVM and restores it almost instantly. On paper it's the bigger win: checkpoint a Paper Instance once it's warm, then restore on allocation instead of holding idle processes. I'm not planning on it, and the reason is the same stability concern from the other side. A checkpoint freezes open sockets, file handles, entropy sources, threads, and timers, and each of those needs a restore hook that does the right thing, or the process comes back subtly wrong in a way you don't catch until hours into a match. That's a lot of correctness risk to take on for a faster start, when a warm fleet plus an AOT cache seems to get most of the way there without freezing live state. So CRaC stays in the interesting-but-not-now pile.
+A fresh JVM still takes time, so allocation comes from prebooted Agones fleets. Each capacity class keeps a configurable number of `Ready` Paper instances. Allocation removes one from the buffer and Agones refills it behind the player flow. The match process normally started before anybody asked for it.
 
-## The kernel is small, and it stays small
+I am also exploring the JDK AOT cache work that grew from AppCDS and Project Leyden. Fulcrum fleets boot the same Paper image repeatedly, which makes class and profile reuse unusually attractive. If the cache causes trouble, I can remove it without changing server behaviour.
 
-The other thing v1 taught me is that a god object is a slowmotion disaster you author yourself. So the v2 kernel is deliberately tiny. These are the only concepts it is permitted to know:
+CRaC offers a larger theoretical win by restoring a warmed JVM from a checkpoint. I am leaving it alone for now. Paper owns sockets, threads, file handles, timers, entropy sources, and native state; all of them need correct restore hooks. A warm fleet is boring and observable. Boring wins this round.
+
+## A kernel I can still fit in my head
+
+The v1 player object gradually learned about ranks, punishments, parties, chat, inventory, and whatever feature arrived next. That object became the dependency graph.
+
+The v2 kernel knows a fixed set of concepts:
 
 ```text
 Subject, Session, Presence, Experience, Slot, Instance,
 Pool, Route, Effect, Capability, Artifact, ResolvedManifest
 ```
 
-Rank, punishment, party, guild, economy, chat- none of those are kernel concepts. They are *capabilities*: governed bundles that declare their own contracts, authorities, commands, events, projections, and effects, which the platform then materializes into real topics and workers. Core compiles and runs without a single capability installed. There is no central command enum, no global player object, and an architecture test that rejects `core -> rank` the instant someone introduces it. A Subject is an identity plus whatever capability projections attach to it. It has no `.rank` field, because the day it gets one is the day the kernel starts knowing about ranks, and a kernel that knows about ranks soon knows about everything.
+A `Subject` is an identity. Rank, punishment, party, guild, economy, and chat live in installable capabilities. Core builds and runs with zero capabilities installed.
 
-## Everything canonical is a typed command to an authority
+`Subject` exposes identity only. Each capability owns its commands and events. An architecture test rejects imports such as `core -> rank`, and code generation produces the typed client and storage glue from the capability declaration.
 
-No host process holds database write credentials. That single constraint shapes the entire data layer, and it is the exact inverse of how v1 behaved, where any plugin holding a Mongo handle could write whatever it liked.
+This is less glamorous than discovering in two years that the kernel has opinions about guild chat formatting.
 
-In v2, canonical state changes travel as typed commands to authorities. An authority consumes commands from the log, validates them, applies idempotency and partition fencing and a revision check, writes its projections, and emits events plus a result. The log is the durable spine; the stores are projections off it; Kafka can always redeliver, which is the reason every cross boundary command has to be idempotent.
+## Canonical writes go through authorities
+
+Paper and Velocity hosts do not receive database write credentials. They submit typed commands to capability authorities over Kafka.
+
+An authority validates the command, applies idempotency and partition fencing, checks the expected revision, writes its projections, then publishes events and a result. Kafka can redeliver, so every command crossing this boundary carries an idempotency key.
 
 ```text
-Kafka KRaft   command, event, and state spine; the source of truth
-Cassandra     hot projections: presence, live routes, session checkpoints
-PostgreSQL    relational system of record: history, audit, migrations
-Valkey        cache, idempotency dedupe, leases, short-lived coordination
+Kafka KRaft   durable command, event, and state log
+Cassandra     hot projections: presence, routes, session checkpoints
+PostgreSQL    history, audit, relational records, migrations
+Valkey        cache, deduplication, leases, short-lived coordination
 Object store  immutable artifacts, templates, cold realm snapshots
 ```
 
-Host runtimes and experience code emit commands, read the projections they are allowed to read, and run host-local effects. They do not write canonical stores, do not create their own tables, and do not assert arbitrary identities. The commands, events, projections, and the DDL behind them all come from contract declarations through code generation, not from handwritten `Map<String, Object>` payloads. A capability author writes a record; the build produces the typed client, the serializer, the topic, the projection writer, the migration, and the test fixtures. The contract is meant to be the only thing written by hand. Everything downstream is generated from it, because the alternative is fourteen slightly different definitions of the same event drifting apart over a year.
+Host code reads the projections it is allowed to read and emits commands for canonical changes. It cannot create a surprise table from inside a minigame plugin or write a forged subject ID directly into PostgreSQL.
 
-## The session runtime is two layers
+Capability contracts are ordinary records. The build generates serializers, topic bindings, typed clients, projection writers, migrations, and test fixtures from those records. Keeping the contract in one place avoids maintaining several near-identical event definitions across Java, Kafka, Cassandra, and PostgreSQL.
 
-A Session runs as a pure reducer wrapped in a Paper-bound shell. The reducer is a host neutral functional core: it takes meaningful domain events and the current state and returns new state plus a list of effects. It is not allowed to import Paper, Bukkit, Velocity, or any Minecraft server class- an architecture test enforces that- which means it is testable without a server and replayable straight from the log.
+## Session code has a pure core and a Paper shell
 
-The tick runtime is the imperative shell that actually touches Paper. The split that matters is which behavior crosses a platform boundary and which stays home:
+A session reducer accepts domain events plus current state and returns new state plus effects. Architecture tests keep Paper, Bukkit, Velocity, and Minecraft server classes out of that package. The reducer can be replayed from a log and tested without booting a server.
+
+The tick runtime is the imperative shell. It owns ordinary Paper behavior and executes local effects:
 
 ```text
 Local Paper behavior   cancel a block break, spawn particles, play a sound,
-                       apply knockback, run local combat logic
+                       apply knockback, run combat logic
+
 Platform effect        route a Subject, grant a reward, write stats,
                        checkpoint a realm, emit an authority command
 ```
 
-Most of a minigame lives in the first column, and v2 does not force it through an abstraction it does not need. Because one Instance hosts exactly one Session, local Paper code is allowed to stay local Paper code. Effects exist only for the things that have to leave the Pod, and the reducer is forbidden from blocking the tick while it waits for one to settle. You emit the command and keep ticking; the result returns later as another event.
+Most minigame code stays in the first group. A block-break cancellation has no reason to visit Kafka. Anything that leaves the Pod becomes an effect, and the reducer keeps ticking while the result travels back as another event.
 
-## Code is pushed, content is pulled
+During debugging, I can replay the same event stream and expect the same session decisions. The Paper shell remains responsible for the messy physical world, where players and plugins continue inventing new edge cases.
 
-Compiled code ships through the fleet rollout. Maps, rotations, kits, loot tables, shop contents, and every operator-tunable number do not. Those are content, pulled and pinned into a ResolvedManifest at placement time- the exact set of code, content, config, contracts, and capability versions chosen for one Session. The test for which is which is simple: if changing a thing should not require a code rollout, it is content, and hardcoding it into a compiled artifact is a bug. v1 had map ids sitting in source. I am not doing that twice.
+## Versioning a session
 
-## The idea underneath
+Compiled code ships with the fleet image. Maps, rotations, kits, loot tables, shops, and operator-tunable values live as content artifacts.
 
-The idea underneath all of it is fairly small. The hard parts of running a Minecraft network- scheduling, allocation, warm capacity, a durable change log- were mostly solved years ago by people who weren't thinking about Minecraft at all. v1 tried to resolve them and mostly lost. v2 leans on that existing infrastructure instead, and spends what it saves on the part that's actually specific to this domain: the contracts that turn a player pressing /play into a Session on a Pod that nobody had to place by hand.
+Placement resolves those inputs into a `ResolvedManifest`: the exact code image, content bundle, config, contracts, and capability versions for one session. The manifest is pinned for the match lifetime and stored with its trace data.
 
-*Fulcrum is in progress and actively being worked on.*
+v1 hardcoded map IDs in source. I am not doing that twice.
+
+## Current state
+
+Fulcrum v2 is active work. The repository contains the kernel model, capability contracts and generation, host runtimes, authority paths, session model, and deployment work as they are built out. Some pieces described here are still being completed and exercised together.
+
+Agones allocates processes. Kafka preserves ordered changes. Fulcrum spends its custom engineering on Minecraft-specific contracts and player flow. v2 has fewer heroic ambitions and a better chance of working.

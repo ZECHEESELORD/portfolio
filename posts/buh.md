@@ -1,37 +1,22 @@
 ---
-title: Live Service SMP Experience
+title: buh, the SMP core I run for my friends
 image: /assets/buh/buh.png
 published: 2025-11-23
 github: https://github.com/ZECHEESELORD/buh
 kind: case
 tags: Paper, Server Systems, Packets
-role: Sole engineer. Module system, data layer, stats/combat/item stack, and staff tooling.
+role: Sole engineer and server operator.
 stack: Java, Paper, PacketEvents, Nitrite, MySQL, LuckPerms
 mono: "#aec8b8, #6f9d78"
 ---
 
-`buh` is the live service SMP core I run for my osu friends: one plugin that owns the server experience end to end. The intent is to ship features quickly without turning the server into a pile of unrelated mechanics.
+`buh` is the SMP core I run for my osu! friends. The name went through an extensive branding process lasting several seconds.
 
-This is production code in the only way that matters: real players; real menus; real item edge cases; real “why is this broken at 1am” debugging.
+The server started collecting features quickly: levels, custom items, combat stats, menus, cosmetics, staff tools, and assorted jokes that somehow needed persistence. I put them in one plugin so they could share the same data model, UI language, item rules, and lifecycle.
 
-## Design goals:
-- Live service as a priority- Features can be enabled, disabled, and iterated without rewriting the core.
-- One data story- a slimmed down Data API (based on Fulcrum, another one of my projects) that keeps feature code storage agnostic.
-- Sane migrations, staff audit trails, debug commands, and consistent output.
-- Consistent Design- UI, items, and combat should feel cohesive and integrated, not a mish-mash of random plugin visuals.
+I run it for real players. They lose items, reopen menus during reloads, discover impossible crafting paths, and ask why something broke at 1 a.m. They are an excellent substitute for dignity and a decent substitute for QA.
 
-## Why this is interesting:
-Most SMP servers are a plugin salad. `buh` is closer to a platform:
-
-- A **module system** with dependency ordering and a single activation flow.
-- A **data layer** that supports document stores and migrations, allowing for easy implementation and consistent data access across features.
-- A **gameplay stack** where items feed stats, stats feed combat, and everything is surfaced cleanly in menus, tab, and scoreboard.
-- Packet side rendering when we want per player views.
-
-## Highlights
-**Modules**, **typed config**, **document Data API** (JSON/Nitrite/MySQL), **menus + UI framework**, **packet-side UX** (names + lore), **stats + custom combat**, **item engine** (PDC instances, abilities, enchants, durability), **economy + mobs**, **cosmetics + unlockables**, **staff tooling**.
-
-## Picture Gallery
+## What players see
 
 <div class="gallery">
   <figure>
@@ -63,85 +48,44 @@ Most SMP servers are a plugin salad. `buh` is closer to a platform:
   </figure>
 </div>
 
-## Core subsystems
-### Data and backend
-- Storage-agnostic document API with async-first stages and snapshot updates.
-- Store backends for JSON, Nitrite, and MySQL; virtual threads for I/O where appropriate.
-- Migration suite for legacy JSON data and store migrations, plus admin commands.
-- Ledger repositories for audit trails and item instance tracking.
+Menus use the same navigation and pagination. Items use the same lore renderer and instance state. Stats feed combat and appear in profiles, tab, and scoreboards. Packet-side rendering handles the cases where two viewers should see different names or lore.
 
-### UI and menus
-- Menu toolkit: custom menus, list menus, tabbed menus, anchored controls, viewport grids.
-- Player menu views: stats, level, perks, cosmetics, compendium, bank, settings.
-- Item browser: search friendly browsing for custom items.
+## Starting and stopping features
 
-### Stats, combat, and items
-- Stat registry: definitions, modifiers, stacking models, condition logic, change events.
-- Stat bindings: mirrors key stats to vanilla attributes for visuals.
-- Custom damage pipeline: armor curve configuration; bow draw tracking; damage markers.
-- Item instances: PDC state for stats, enchants, trims, durability; stable instance ids.
-- Ability system: triggers, executors, cooldown keys, lore output.
-- Enchants: registry, incompatibility enforcement, curves; versioned item migrations.
+Each feature is a module with an ID, category, dependencies, configuration, and one activation path. Startup resolves the dependency graph before enabling anything. Missing dependencies, cycles, and duplicate IDs stop startup before a half-alive server appears.
 
-### Social and staff operations
-- Chat formatting and channels; DMs; staff chat prompts.
-- Staff tooling + commands, vanish, shutdown/update workflows, moderation
+Module toggles and feature options are typed. A feature can be disabled, migrated, or replaced while the rest of the core keeps running. This matters on a small live server because most changes are shipped while the same group of people is actively trying to break them.
 
-## Notes and next steps
-If I keep extending buh, the next feature implementations are about content: creative usage of the API, new content, retensive (is this a word) content, and additional optimizations.
+Messages also pass through one facade for success, information, debug, and error output. It sounds minor. It stops every command from inventing a new dialect of green and red text, which is how civilizations fall.
 
+## One data path
 
-## Full implementation surface area:
+Feature code talks to a document API shared with my other projects. Documents support dot-path reads, patch updates, snapshots, and asynchronous stages. Store implementations exist for JSON, Nitrite, and MySQL, with virtual threads used for blocking I/O where they help.
 
-  This is the complete checklist of shipped systems in the core.
+The original server data did not begin in this shape, so `buh` also has migration tooling for legacy JSON and store-to-store moves. Admin commands report progress and failures. Snapshot updates keep feature code from retaining live mutable records across asynchronous work.
 
-  ### Backend
-  - Module loader with dependency graph, descriptors, categories, and activation flow
-  - Module config service (single source of truth for module toggles)
-  - Feature config service with per-feature YAML defaults and typed options
-  - Data API with document collections, dot-path reads, patch updates, snapshots, async stages
-  - Stores: JSON, Nitrite, MySQL; virtual threads for I/O
-  - Ledgers: audit trails and item instance tracking; SQLite or MySQL backends
-  - Data migration suite for legacy JSON and store migrations, plus admin commands
-  - Cooldown registry with linkable keys, ticket expiry, background reaper
-  - Message facade with structured success, info, debug, error output
+Ledgers record staff actions, economy changes, and custom item instances. Every item carries a stable instance ID in its PDC state, which makes duplication bugs and mysterious inventory history much easier to investigate. "Where did this sword come from?" should have a better answer than vibes.
 
-  ### UI and menus
-  - Menu toolkit; registry; rich components; viewport grids
-  - Player menu views: stats, level, perks, cosmetics, compendium, bank, settings
-  - Item browser;
-  - Scoreboard API with modules and per-player state tracking
-  - Tab header/footer with TPS and server name
+## Items, stats, and combat
 
-  ### Player systems
-  - Player core document: meta, stats, inventory, staff flags
-  - Leveling curve; prestige; progress summaries
-  - Biome discovery tracker with first-visit timestamps
-  - Player settings service; directory service; session hooks
-  - LuckPerms meta formatting; offline cached support
-  - Per-viewer name rendering via PacketEvents
-  - Linked account resolution for osu and Discord aliases
+The item engine stores component state in PDC: instance ID, stats, enchants, trims, durability, abilities, and migration version. YAML definitions resolve into runtime items, while vanilla stacks can be wrapped by the same model.
 
-  ### Stats and combat
-  - Stat registry; modifiers; stacking models; condition logic
-  - Stat service with containers, change events, source context tracking
-  - Stat binding manager; custom damage pipeline; bow tracking; damage markers
+Stats are registered definitions with modifiers, stacking rules, conditions, and change events. Selected values bind back onto vanilla attributes for client-side visuals. The custom damage pipeline handles armor curves, bow draw state, hit markers, and source context.
 
-  ### Items and equipment
-  - Item model with modular components, traits, categories
-  - YAML item definitions; runtime resolution; vanilla wrapping
-  - PDC instance state: ids, stats, enchants, trims, durability
-  - Abilities with triggers/executors/cooldowns; lore output
-  - Enchants with curves and incompatibilities; item migrations
-  - Packet-based lore renderer; durability service; craft provenance logging
-  - Inventory safety: creative sanitizer; blocked item masking
-  - Anvil/grindstone/smithing/lectern handling; trim recipe blocking; item debug commands
+Abilities use named triggers, executors, cooldown keys, and generated lore. Enchantments carry curves and incompatibility rules. Anvil, grindstone, smithing, lectern, crafting, and creative-mode paths all receive explicit handling because custom items become ordinary items very quickly when one inventory screen is forgotten.
 
-  ### Gameplay systems
-  - Economy; mobs with tiers and nameplates; unlockables; cosmetics
-  - Crawl manager; stash service; feature vote system
-  - Jukebox metadata + PCM streaming; fun module; head drops; perk command
+## Menus and packet-side UI
 
-  ### Social and staff
-  - Chat formatting; channels; DMs; staff chat prompts; unsigned chat fallbacks
-  - Staff service and guard; staff commands; vanish; shutdown module; diagnostics
+The menu toolkit supports ordinary menus, lists, tabs, anchored controls, and viewport grids. Player views cover stats, levels, perks, cosmetics, the compendium, bank, and settings. The item browser adds searchable navigation across custom items.
+
+PacketEvents handles per-viewer name rendering and item lore. That allows staff state, player aliases, and contextual item information to appear for one viewer without mutating the underlying entity or stack for everybody else.
+
+The scoreboard and tab APIs maintain per-player state. A feature publishes values; the renderer handles diffing, formatting, and cleanup.
+
+## Operating the server
+
+Staff tools include vanish, moderation helpers, audit prompts, diagnostics, controlled shutdown, and update workflows. The shutdown module announces the restart, stops new work, saves state, and moves through one owned sequence. It exists because `/stop` is technically an operation plan, just not a very good one.
+
+The same ownership rule applies to modules. Scheduled tasks, menus, packet state, listeners, and caches are registered against the feature that created them. Disabling a module should remove its mess.
+
+The next work is content built on top of this core: more items, mobs, unlocks, and reasons for players to care about the systems already there. The plumbing has had enough attention. It would like to see sunlight.

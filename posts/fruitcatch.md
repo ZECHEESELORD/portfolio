@@ -5,128 +5,112 @@ published: 2026-05-10
 github: https://github.com/ZECHEESELORD/FruitCatch
 kind: experiment
 tags: Paper, Game Design, Performance
-role: Solo weekend project. Parser, timing model, input pipeline, audio, and match lifecycle.
+role: Solo weekend project.
 stack: Java 25, Paper, SQLite, Display Entities, ffmpeg / JAVE
 mono: "#f4c542, #e0962a"
 initials: FC
+summary: I made Minecraft import real .osz files, generate the song pack, and judge osu!catch through a 20 Hz server loop.
 ---
 
-"FruitCatch" is a small weekend project I decided to create during a particularly slow Saturday afternoon. It's a Paper plugin minigame that runs osu!catch beatmaps inside Minecraft 26.1.2. You're able to throw an actual `.osz` archive into the beatmaps folder, run `/fruitcatch import`, pick a difficulty from an ingame menu, and a solo run plays out on a vanilla display entity playfield. Project is not completed (I would like to implement multiplayer capabilities), so the source code is not available yet.
+FruitCatch happened during a slow Saturday afternoon. I wondered how much of osu!catch could survive being shoved through a Minecraft server, then made the mistake of checking.
 
-## At a glance
-
-- Platform: Paper plugin, Minecraft 26.1.2
-- Toolchain: Java 25, Gradle
-- Beatmap input: user supplied `.osz` archives, osu!catch `Mode:2` only
-- Catalog: SQLite (WAL) with extracted archive cache; `mtime+size` quick check, SHA-256 on miss
-- Visuals: vanilla item, block, text, and interaction display entities. No custom model pack required for gameplay.
-- Controls: invisible armorstand seat with horizontal aim driven by camera yaw
-- Audio: per song resource pack generated and served by an in process HTTP server
-- Rules scope: AR, CS, fruits, sliders (head/tail/repeats/ticks/tiny droplets), bananas, hits/misses, combo, accuracy, lazer-style scorev2 subset
-
-## What's actually hard
-
-Unfortunately, Minecraft was not built for rhythm games (sad). The server tick is 20 Hz (20 ticks per second) nominal, and under load it misses- sometimes badly (anyone play M7?). Display entities interpolate visually, yes, but the underlying state is still tick quantized. Players have a sandbox movement model with WASD, jump, and a free look camera, none of which map natively onto a 1D catcher. The client refuses to play arbitrary audio files on demand. And every run leaves behind exactly the kind of state- think entities, scheduled tasks, mounted seats, sent resource packs, arena reservations- that turns a minigame from "playable" into "needs a server restart."
-
-Most of the engineering effort lives at those edges. The osu! gameplay rules are largely a porting problem. The timing model, the input pipeline, the audio delivery, and the run lifecycle are the actual work.
-
-## The player flow
+FruitCatch is a Paper minigame for Minecraft `26.1.2`. Drop an `.osz` archive into the beatmaps folder, run `/fruitcatch import`, choose a difficulty, accept the generated audio pack, and play the map on a display-entity field. Solo runs work. Multiplayer is the next large piece, and the source will be released after cleanup.
 
 ```text
 .osz → /fruitcatch import → /fruitcatch join → pick difficulty
        → accept generated audio pack → 3-2-1 → play → result → cleanup
 ```
 
-Behind that flow, the importer detects which archives have changed (mtime + size first, SHA-256 only when those move), extracts only the changed ones into a content keyed cache directory, parses every `Mode:2` `.osu` it finds, and writes the result into a SQLite catalog. Subsequent menu opens are paged reads against the catalog, not zip extractions.
+Minecraft gives me a 20 Hz server loop, a free-look camera, and no API for playing an arbitrary song file. That toybox was enough to make the project interesting in several avoidable ways. See below.
 
-That split (quick state check first, expensive parse only on miss) is what makes `/fruitcatch join` feel nice and reactive on a server with hundreds of imported maps. The catalog uses WAL journaling and a `ReentrantReadWriteLock`, so menus stay readable while a background refresh is rewriting changed archives.
+## Importing real beatmaps
 
-## Beatmap parsing
+The importer scans user-supplied `.osz` archives and checks `mtime + size` first. A changed archive gets SHA-256 hashed, extracted into a content-keyed cache, parsed, and written into SQLite. Unchanged archives skip extraction and parsing. Menus read from the catalog, so opening `/fruitcatch join` does not turn into zip-file archaeology once the server has hundreds of maps.
 
-The parser only accepts `Mode:2` files, while other rulesets in the same archive are skipped. It reads metadata, `[Difficulty]`, `[TimingPoints]`, hit samples, and `[HitObjects]`, then runs an osu!lazer-shaped postprocess pass:
+SQLite runs in WAL mode behind a `ReentrantReadWriteLock`. A background refresh can replace changed catalog entries while player menus continue reading the last committed state.
 
-- circles → fruit
-- slider heads, repeats, and tails → fruit
-- slider ticks → droplets
-- legacy "tiny droplets" generated between ticks → tiny droplets
-- spinners → bananas
+Only osu!catch maps with `Mode:2` are accepted. The parser reads metadata, difficulty values, timing points, hit samples, and hit objects, then builds the catch timeline:
 
-Two pieces of that postprocess are direct ports from osu!, rather than reinventions. Banana and tiny-droplet horizontal positions use osu!'s `LegacyRandom` seeded with `1337`, because that is what osu! does and it is the only way the visual chart matches what a player has already seen on the original client. Hyper-dash detection uses lazer's distance-vs-time test more or less verbatim. We currently do not render the dash mechanic itself, but the data is computed and attached to each fruit, so when there is a reason to draw it the renderer is the only missing piece.
+- circles become fruit;
+- slider heads, repeats, and tails become fruit;
+- slider ticks become droplets;
+- legacy tiny droplets are generated between ticks;
+- spinners become bananas.
 
-The output of all this is a sorted timeline of `CatchObject`s with absolute start times. That timeline is the authoritative source for the rest of the run. Display entities are presentation.
+Banana and tiny-droplet X positions use osu!'s `LegacyRandom` with seed `1337`. Hyper-dash detection follows lazer's distance-versus-time check. Those details matter because players already know what the chart looks like in osu!; changing the random placement produces a different map wearing the same title.
 
-## Timing: two clocks, on purpose
+The parser outputs a sorted timeline of `CatchObject`s with absolute start times. Scoring and judgement consume that timeline directly. Display entities are free to be late and pretty.
 
-The single most load-bearing decision in the project is that judgement time and visual time are separate.
+## Timing with a server that occasionally forgets time
 
-The judgement clock (`SongClock`) is a thin wrapper over `System.nanoTime()`. It stores one `zeroNanos` reference (the moment in real time that maps to song-time zero) and reports elapsed song time as `(now - zeroNanos) / 1e6 + offset`. Intro skip is implemented by recomputing `zeroNanos` so the clock lands on the new audio position. There is no PID, no integrated tick delta, no smoothing. The clock cannot drift because nothing is integrating into it.
+Audio plays on the client. Judgement runs on the server. A Minecraft tick nominally lasts `50 ms`, then lag happens and the tick develops personal plans.
 
-The visual clock (`VisualSongTime`) is a separate object that tracks what the *animation* should believe. Each tick it predicts forward by exactly 50 ms (one frame), then compares itself to the song clock and applies a bounded correction:
+So FruitCatch uses two clocks.
 
-- drift ≤ 20 ms: ignore (dead band)
-- drift ≥ 140 ms: snap to the song clock
-- otherwise: nudge by at most 6 ms toward the song clock
+`SongClock` wraps `System.nanoTime()`. It stores the real-time instant corresponding to song time zero and reports:
 
-The reason for two clocks is that a 200 ms hitch in the server tick is invisible to the player's audio (it is playing on the client) but very visible to fruit positions if they are redrawn straight off elapsed song time. The visual clock absorbs jitter; the song clock keeps timing honest. Hit detection samples the song clock, never the visual one. That split is the difference between "oh this is correctly timed rhythm" and "ah yes, "rhythm"."
+```text
+(now - zeroNanos) / 1e6 + offset
+```
 
-The approach-rate preempt is osu!lazer's range (`PREEMPT_MIN/MID/MAX = 450 / 1200 / 1800 ms`) multiplied by a constant 1.15. The catch hitbox is lazer's catch width multiplied by 1.5 (Both multipliers are named, applied on top of the un-multiplied lazer math, and recoverable.) They exist from a balancing standpoint- Minecraft's "precision" is a lot coarser than an osu! is, and the input device is a free look camera rather than a tablet. (During testing AR8+ maps were "technically" playable, but were kind of miserable to play.)
+Intro skip recomputes `zeroNanos` for the new audio position. The clock does not accumulate tick deltas, so a slow server tick cannot permanently move the song timeline.
 
-## Mouse control through a Minecraft body
+`VisualSongTime` controls animation. Each tick it predicts `50 ms` forward, compares itself with `SongClock`, and corrects the difference:
 
-The catcher is driven by the camera, not by movement keys. While a run is active, the player is mounted on an invisible, gravity-disabled armor-stand seat (`PlayerSeatRig`) and their look ray is projected onto the playfield plane each tick. The math is one ray-plane intersection in `CatcherAimProjector`:
+- drift up to `20 ms`: leave it alone;
+- drift from `20 ms` to `140 ms`: move at most `6 ms` toward the song;
+- drift above `140 ms`: snap.
 
-- if the look direction is parallel to the plane (`|dz| < 1e-6`), no update
-- if the intersection is behind the player (`distance ≤ 0`), no update
-- otherwise the world-space hit X is mapped into osu!'s `[0, 512]` playfield range and clamped
+A `200 ms` server hitch therefore gets absorbed gradually, and the fruit stay on a smooth path. Judgement still samples `SongClock`, so smoothing the animation never widens or shifts the hit window.
 
-Gameplay logic only consumes the normalized X. The mount, the seat reattaching after teleport, the canvas geometry, all live in the presentation layer. The same projector runs in unit tests with no Bukkit dependency.
+The approach rate preempt uses osu!lazer's `450 / 1200 / 1800 ms` range multiplied by `1.15`. Catch width uses lazer's value multiplied by `1.5`. Minecraft camera input is much coarser than tablet movement; unadjusted AR8+ maps were technically playable in the least enjoyable sense of the word.
 
-The non obvious problem is sampling rate. Minecraft fires `PlayerMoveEvent` only when the camera actually moves, while judgement happens at exact, often inter-tick, song times. A `CatcherPositionSamples` deque keeps the last few seconds of `(time, x)` samples and answers "where was the catcher at time t?" by linear interpolation between the two bracketing samples. Without this, a player making a fast crossscreen flick misses fruit they visibly caught, because judgement runs against the catcher's position at the next tick rather than at the object's true judgement time. With it, judgement matches what the player saw.
+## Driving the catcher with camera movement
 
-## Audio: per-map resource packs
+The player sits on an invisible, no gravity armor stand while a run is active. Each camera update projects the look ray onto the playfield plane:
 
-Minecraft will not play arbitrary `.mp3` files from a plugin folder (sadge), and bundling beatmap audio in the jar is both a copyright problem and an update problem. We build a one map resource pack at run time and ask the client to load it.
+- `|dz| < 1e-6`: the ray is parallel, so keep the previous position;
+- intersection distance at or below zero: the plane is behind the player;
+- otherwise: map the world-space X coordinate into osu!'s `[0, 512]` range and clamp it.
 
-How it works, effectively:
+Gameplay only sees the normalized X coordinate. Mount management, teleports, and display geometry stay in the Minecraft layer. `CatcherAimProjector` itself has no Bukkit dependency and runs in unit tests.
 
-1. Resolve the beatmap's declared audio file inside the extracted archive. Any path that escapes the archive's cache directory is rejected.
-2. SHA-1 the audio- The hash is the asset name and the cache key: two beatmaps that ship the same audio share one pack.
-3. If a converted `.ogg` for that hash does not exist, run the source through the audio converter. Files that are already `.ogg` copy through without re-encoding.
-4. Zip up `pack.mcmeta`, `assets/fruitcatch/sounds.json`, and the audio. Hash the zip. Derive a deterministic UUID from `(audio-hash, pack-hash)` so identical packs are recognised by the client.
-5. Register the pack with the in-process HTTP server (`com.sun.net.httpserver.HttpServer` -- no extra dependency) and `setResourcePack` it to the player.
+Sampling rate caused the less obvious bug. `PlayerMoveEvent` arrives when the camera moves. Judgement can occur between those events at an exact song time. Reading the latest catcher position makes a fast cross screen flick land one tick late even when the fruit visibly overlaps the catcher.
 
-The HTTP handler refuses anything that is not a `GET` to `/fruitcatch-packs/<filename>`, blocks `..`, `/`, and `\` in the filename, and serves `Cache-Control: public, max-age=31536000, immutable` so the client's pack cache does the right thing on rejoin. (This would be implemented a bit differently on a real minigames server)
+`CatcherPositionSamples` keeps a short deque of `(time, x)` samples. Judgement asks for the catcher position at the object's timestamp, then linearly interpolates between the surrounding samples. The server grades the position the player moved through at that timestamp. The next tick no longer gets to rewrite history.
 
-A per player cache (`FruitCatchResourcePackCache`) tracks which pack a given player most recently loaded. For the scenario of "Same player, same beatmap, second run (maybe they missed a note or something, idk)": the download is skipped. For the scenario "Same player, different beatmap": the previous pack is removed before the new one is sent.
+## Generating audio packs
 
-The converter itself is a small fallback chain. The default is JAVE's embedded ffmpeg, which is bundled only for Linux x64 and Windows x64; outside those platforms we fall back to an external `ffmpeg` on `PATH`, configurable per server. Embedded conversion fails are caught and retried against the external binary before surfacing an error.
+Minecraft will not load arbitrary `.mp3` files from a plugin directory. FruitCatch builds one resource pack per unique audio file and serves it through a small in-process HTTP server.
 
-If the first hit object is more than 7 seconds in, a second variant of the audio is rendered that starts 2 seconds before the first fruit, exposed ingame as the intro skip option. That variant is hashed and cached the same way as the full audio, under a deterministic filename, so it survives plugin restarts.
+The pipeline is:
 
-## Score: a working subset of lazer scorev2
+1. Resolve the declared audio path inside the extracted archive. Paths escaping the cache directory are rejected.
+2. SHA-1 the source audio. The hash becomes the asset name and conversion cache key.
+3. Convert to `.ogg` through JAVE's embedded ffmpeg, then fall back to an external `ffmpeg` on `PATH` when needed. Existing `.ogg` files copy directly.
+4. Build `pack.mcmeta`, `sounds.json`, and the audio into a zip. A deterministic UUID is derived from the audio and pack hashes.
+5. Serve the pack and send it with `setResourcePack`.
 
-`CatchScoreState` implements lazer's scorev2 model for the supported result set. The total is split between a combo portion and a tiny-droplet portion, weighted by how many tiny droplets the map actually contains, summing to 1,000,000 on a perfect run. Combo contribution is `300 · cappedLog(combo)` for fruit and `100 · cappedLog(combo)` for slider ticks, with the log capped at 200x. Bananas (gold bars) are bonus and do not affect accuracy.
+The HTTP handler accepts `GET` requests under `/fruitcatch-packs/<filename>`, rejects path separators and traversal, and sends long lived immutable cache headers. Identical audio produces the same pack identity, so the client cache works across retries and rejoins.
 
-Accuracy is computed against a running maximum-base-score total, not a hit count. That is the only way the number stays consistent with osu!'s definition once droplets and tiny droplets enter the mix.
+A per-player cache remembers the last loaded pack. Replaying the same map skips the download. Switching maps removes the old pack before sending the next one.
 
-This is not the full lazer scoring model (no HP drain, no mods, no grade), but the scorev2 scoring shape is faithful to the supported objects, and the unit tests pin the per object math against handcomputed cases.
+## Score and personal offset
 
-## The match state machine
+`CatchScoreState` implements the supported portion of lazer scorev2. Comboable objects and tiny droplets contribute through separate weighted portions that sum to `1,000,000` on a perfect run. Bananas are bonus objects and do not affect accuracy.
+
+Accuracy uses the running maximum base score, which keeps droplets and tiny droplets aligned with osu!'s result model. HP drain, mods, and grades are still outside the current ruleset.
+
+Each player also gets a personal offset from `-100 ms` to `+100 ms`. It is added to `INTERNAL_OFFSET_MILLIS = -85`, the empirical constant where calibrated playtesters produced centered judgement errors. That value absorbs the stable portion of the latency between client audio and display-entity presentation.
+
+## Cleaning up the minigame-shaped crime scene
+
+Every run moves through an explicit phase machine:
 
 ```text
 PROVISION → QUEUE → RESOURCE_PACK → COUNTDOWN → PLAY → END → CLEANUP
 ```
 
-`MatchPhase` permits only the listed transitions, and every illegal transition is logged. Each solo run owns its arena slot, its scheduled tasks (countdown, resourcepack timeout, end hold, cleanup hold, async pack preparation), its display entities, and its mount. `FruitCatchMatch.close()` cancels all of them, idempotently.
+A match owns its arena slot, scheduled tasks, resource-pack timeout, async conversion future, displays, mount, and every spawned entity. `FruitCatchMatch.close()` cancels and removes them idempotently.
 
-The reason we use a phase machine this explicit, is that the failure cases are where minigames usually get cooked. Players decline the resource pack. Players quit mid song. The audio pack future fails halfway through. The world reloads. Each of those paths takes a `failBeforePlay` or `cleanupMatch` route that returns the player to the lobby, removes the sent pack, releases the arena slot, cancels every outstanding `BukkitTask`, and removes every entity in the run's `ownedEntities` list.
-
-It's also just a nice and intuitive way of thinking about things. Especially minigame logic.
-
-## Personal offset
-
-Every player gets a personal offset slider, clamped to ±100 ms, persisted (in memory, for now) per player. The displayed value is summed with a fixed `INTERNAL_OFFSET_MILLIS = -85` before being passed to the song clock. The internal constant is empirical- it is the value at which calibrated playtesters hit consistent zero-error judgements on test maps. It absorbs the constant component of the latency between Minecraft's audio pipeline and display-entity rendering on the client. 
-
-## Tests
-
-The unit tests are mostly concentrated where regressions would be silent- think `.osu` parsing, archive import (including unsafe-zip-entry rejection), AR/CS math, slider event generation, song clock seeking, catcher ray projection, sample interpolation at judgement time, hitbox intersection, score state, generated pack contents, audio-converter fallback, and match-phase transitions. Visual presentation is uncovered.
+The minigame usually gets cooked in its failure paths. Players decline the pack, quit during countdown, disconnect mid-song, lose the world, or hit an ffmpeg failure halfway through preparation. Every path returns the player, removes the sent pack, releases the arena, cancels Bukkit tasks, and clears `ownedEntities`.

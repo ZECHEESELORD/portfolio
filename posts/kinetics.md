@@ -9,94 +9,70 @@ role: Sole engineer. API design, Jolt integration, terrain collision, packet ren
 stack: Java 21, Paper 1.21.11, Jolt 5.2, PacketEvents 2.13
 mono: "#c7cbc8, #a86243"
 initials: KI
-summary: A reusable rigid body layer for Paper, with bounded Jolt scenes, live Minecraft terrain, and packet-rendered bodies.
+summary: I put Jolt inside Paper so Minecraft objects could fall, spin, hit live terrain, and leave at speed when somebody brought a sword.
 ---
 
-Kinetics is a rigid body physics layer for Paper, built on Jolt. It gives other plugins a small API for creating bounded scenes, turning displays or mobs into bodies, applying forces, raycasting, and listening for collisions or player interactions. The bodies collide with the Minecraft world and rotate like objects, rather than doing the floaty hover that is considered vanilla physics.
+I wanted to hit a slime ball with a sword and watch it leave at speed.
 
-![Kaboom](/assets/kinetics/impact.gif)
+Minecraft's display entities are extremely good at the "display" part. Falling, bouncing, and rotating after an off centre hit are apparently "do it yourself" features.
 
-## From Chaotic to Kinetics
+This is how [Jolt Physics](https://github.com/jrouwe/JoltPhysics) ended up inside a Paper plugin.
 
-Kinetics makes more sense beside [**Chaotic**](https://github.com/ZECHEESELORD/chaotic), my earlier N-link pendulum experiment. Chaotic used a hand-written Verlet integrator and Position-Based Dynamics solver. That was the point of the project: take one constrained system, understand the math, and make it stable enough to look convincing at Minecraft's 20 Hz tick rate.
+![A sword strike launches several Minecraft item displays with rigid body physics.](/assets/kinetics/impact.gif)
 
-That approach works because Chaotic is narrow. A pendulum needs particles, rods, gravity, and a renderer. Once I wanted free rigid bodies, writing the solver myself stopped being a sensible side quest. Jolt already knows how to handle collision detection, contact manifolds, sleeping, continuous collision, compound shapes, and raycasts. Rebuilding that list would have been a great way to spend months learning why mature physics engines contain so much code.
+## I had already tried doing physics myself
 
-So Kinetics uses [Jolt Physics](https://github.com/jrouwe/JoltPhysics) through Jolt JNI. The shared problem sits outside the solver. Minecraft still advances at 20 ticks per second, Paper still owns the world on one thread, and the client still needs smooth motion from discrete server snapshots. Chaotic owns one simulation from top to bottom. Kinetics puts a boundary around a mature solver so normal Paper code can use it without inheriting all of Jolt.
+Before Kinetics, I made [Chaotic](https://github.com/ZECHEESELORD/chaotic), an N link pendulum experiment. That is a chain of weights connected by rods. I wrote its solver myself: gravity moves each weight, the rods pull their ends back to the correct distance, and the process repeats until the chain stops inventing energy it did not earn.
 
-## What using it looks like
+That was fun because a pendulum is one fairly contained problem. Free moving objects immediately wanted proper contact points, friction, spin, fast collision checks, and an answer for when they could go to sleep. Jolt already had those answers. Rebuilding all of it would mostly teach me why Jolt contains that much C++.
 
-A consumer asks Kinetics for an scoped-by-owner context, creates a bounded scene, then adds bodies through the API. Roughly:
+I chose personal growth and used Jolt through its Java bridge.
 
-```java
-KineticsContext physics =
-    Kinetics.forPlugin(this);
+Using Jolt spared me from writing the solver, but it did not connect itself to a Minecraft server. I still had to feed live terrain into a native engine and turn its results into smooth movement inside a 20 tick game loop.
 
-SceneSpec sceneSpec = SceneSpec.of(
-    "arena", world, bounds);
+## First, put physics in a box
 
-BodySpec bodySpec =
-    BodySpec.inferred()
-        .pose(Pose.at(spawn))
-        .interactable(true)
-        .build();
+Simulating the whole world would let chunk loading, terrain capture, and body counts grow without a limit. I give each scene a fixed box instead. Inside it, Kinetics knows how much land it may have to copy and how many objects it is allowed to wake up.
 
-physics.createScene(sceneSpec)
-    .thenCompose(scene ->
-        scene.createItemDisplay(
-            slimeBall, bodySpec));
-```
+Each plugin owns its scenes and its cleanup. When that plugin disables, Kinetics closes the scene and removes its virtual displays.
 
-The scene boundary is deliberate. Simulating an entire Minecraft world sounds attractive until chunk loading, terrain rebuilds, body limits, and cleanup all become unbounded at once. A `SceneSpec` fixes the world-space bounds, terrain capture budget, and maximum body count up front. Each consuming plugin gets its own `KineticsContext`, and Kinetics closes that context automatically when the owner disables.
+A scene can temporarily take over an existing display or mob, so it records enough state to put them back properly. The display keeps its final physical position, while a mob gets its AI, gravity, collision settings, size, and velocity restored. Leaving a few packet entities behind is ugly. Leaving a cow frozen in midair after a reload becomes a conversation with the server owner.
 
-That ownership reaches the visible entities too. Kinetics can create displays, adopt existing block or item displays, or attach to a mob. Releasing an adopted display puts it back into the world at its final physical pose. Releasing a mob restores the AI, gravity, collision state, scale, and velocity captured when Kinetics attached. A plugin reload should not leave frozen mobs or packet entities behind.
+## The main thread has enough going on
 
-## Keeping Jolt off the Paper thread
+Paper world data can only be read safely on the main server thread. The physics work should not happen there because a busy scene would delay everything else on the server.
 
-Paper world access belongs on the main thread. A physics step does not. Kinetics keeps the handoff fairly small:
+Every tick, Paper gathers whatever changed and asks one coordinator thread for exactly `1/20` second of physics. The coordinator advances the scenes, reads all their new positions and velocities in batches, then hands a snapshot back to Paper for packets and callbacks.
 
-```text
-Paper thread
-  capture terrain and queue commands
-      |
-      v
-Kinetics thread
-  step Jolt scenes and capture states
-      |
-      v
-Paper thread
-  publish packets and callbacks
-```
+If the previous physics step is still running, I skip the new request instead of stacking it in a queue. A queue would eventually produce a beautifully accurate simulation of where the world was three seconds ago. The server has enough problems already.
 
-Every server tick requests one fixed `1/20` second physics step. A single coordinator thread drains queued commands, advances the scenes, and reads positions and velocities into direct buffers in batches. It hands the body-state snapshots back to the Paper thread for publication. If the previous physics pass is still running, Kinetics records a skipped tick instead of stacking another pass behind it. Under load, the simulation can slow down. It does not build an ever-growing queue and make the server's bad afternoon worse.
+Terrain capture also gets a strict time allowance, `2 ms` per scene by default, and it can stop halfway through a section to continue next tick. Once Paper finishes copying the block data, a worker builds the Jolt shape and the coordinator installs it. Bukkit world data never leaves the thread that owns it.
 
-Terrain needs a slightly different split because Bukkit block data can only be read safely on the Paper thread. Each scene gets a small capture budget, `2 ms` by default. Capture can pause halfway through a section and continue next tick. Geometry construction happens on a separate worker, and the finished collider is activated through the physics coordinator.
+## Teaching Jolt what dirt is
 
-## Turning a block world into collision geometry
+Jolt cannot ask Paper which block is under a body every time something falls. I capture each scene in `16 x 16 x 16` block sections and turn those blocks into static collision geometry.
 
-Jolt cannot ask Paper about a block every time a body touches the ground. Kinetics snapshots the bounded scene into `16 x 16 x 16` chunk sections and turns Paper's voxel collision shapes into static Jolt compounds.
+Full blocks get merged. A solid section can become one large box instead of 4,096 tiny boxes all describing the same lump of stone. Stairs, fences, open trapdoors, and other odd blocks keep the smaller collision boxes that Paper reports for them.
 
-Full cubes are greedily merged into larger boxes. A stone floor should be one broad collider, not several thousand one-block children. Stairs, fences, open trapdoors, and other irregular blocks keep the smaller boxes reported by Paper's `VoxelShape`. The geometry stays detailed where Minecraft is detailed and gets cheaper where the world is flat.
+The capture starts aging as soon as players resume playing Minecraft. Players place blocks, pistons move them, fluids spread, trees grow, and explosions submit very broad feedback. When any of that happens, I mark the affected section and a one block border around it for rebuilding.
 
-Terrain also changes. Players place and break blocks, pistons move them, doors open, fluids flow, trees grow, and explosions are rarely polite enough to happen one block at a time. The Paper event bridge invalidates every affected section plus a one-block neighbour halo. Each rebuild carries a revision, so a slow older build cannot overwrite a newer change.
+Each rebuild carries a revision number, so an older worker cannot finish late and overwrite newer terrain. While the replacement is being prepared, bodies touching that area are paused; once the newest collider is installed, anything that was awake gets woken again. This avoids colliding with a block that has already been removed or dropping through a floor that is temporarily between versions. Both are noticeable when the test object is a three block wide ender pearl.
 
-There is an awkward gap between "the world changed" and "the replacement Jolt shape is active." Kinetics temporarily deactivates bodies that overlap the dirty region. It remembers which ones were awake, installs the newest collider, then wakes those bodies again. Otherwise a body can collide with a block that no longer exists or fall through a floor while its replacement is being built. Neither failure is subtle when the body is a three-block-wide ender pearl.
+## A slime ball is regrettably round
 
-## Making the collider look like the item
+Block displays are easy because Minecraft already knows their collision shapes. Items are mostly flat pictures with a little thickness, so giving every one of them a cube collider looks wrong as soon as it rotates.
 
-Block displays are the easy case because Paper already exposes their collision shape. Items are mostly flat generated models, and a generic cube collider looks wrong as soon as one starts spinning.
+For the slime ball, ender pearl, and blaze rod demos, I read the opaque pixels from the vanilla item textures. Each horizontal strip of pixels becomes a thin box with the same `1/16` block depth as Minecraft's generated item model. The collider now follows the visible outline instead of balancing on invisible corners.
 
-For the slime ball, ender pearl, and blaze rod used in the demos, I took the opaque pixels from Minecraft `1.21.11`'s item textures and extruded each horizontal run to the same `1/16` block depth as the vanilla `item/generated` model. The compound collider follows the visible silhouette. Swords, axes, food, the trident, and the mace use smaller hand-authored compound shapes. Unknown items and custom-model items fall back to a conservative thin box.
+Weapons and food use small shapes I made by hand, and known shapes report `EXACT`. Unknown items get a conservative thin box and report `ColliderFidelity.APPROXIMATE`. Resource packs can replace an item's model without telling the server, so there is no more precise answer available.
 
-The API reports that difference as `ColliderFidelity.EXACT` or `APPROXIMATE`. A caller can decide whether the fallback is acceptable instead of Kinetics quietly pretending it knows the geometry of a resource pack it has never seen.
+![A slime ball display spins after an off centre strike beside several other physics bodies.](/assets/kinetics/spinning-slimeball.gif)
 
-![A physics-driven slime ball display spinning after a player strikes it beside other demo bodies](/assets/kinetics/spinning-slimeball.gif)
+This is a slightly silly amount of care for a slime ball. It is also immediately obvious when the thing lands on an edge it visibly does not have. I could not leave it like that.
 
-This is a slightly silly amount of care for a slime ball. It is also immediately visible when the thing spins around an edge instead of an imaginary cube.
+## Unfortunately, air exists
 
-## Material, mass, and air
-
-If the caller does not provide physical properties, Kinetics infers a broad material profile from the Minecraft material. Ice has very little friction. Slime has high restitution. Honey has none and adds much more damping. Wood, stone, metal, gold, glass, wool, soil, and organic items each get different density and surface behaviour. Every value can still be overridden per body.
+When a body has no custom material values, I infer them from the Minecraft item. Ice gets almost no friction and slime keeps its bounce. Honey loses its motion quickly, because honey.
 
 Air resistance uses the usual drag equation:
 
@@ -104,20 +80,23 @@ $$
 F_d = \frac{1}{2}\rho C_d A v^2
 $$
 
-The symbols are less dramatic than they look: air density, a drag coefficient, the area facing the motion, and speed. The useful part is `A`. Kinetics calculates projected area from the body's current rotation, so a thin item moving edge-first catches less air than the same item moving broadside. Boxes, spheres, capsules, and cylinders have direct formulas. Convex hulls and compound shapes sample their silhouette from 32 directions the first time they need it, then keep the result.
+In English, air pushes back harder when an object moves faster. The squared speed matters: twice the speed produces four times the drag. The `A` is how much of the object faces the direction of travel.
 
-It avoids the stranger result where a sword and a full block lose speed in exactly the same way because both received one generic damping constant.
+That area changes while an object spins. A sword moving edge first catches less air than the same sword moving flat side first, so Kinetics calculates the facing area from its current rotation. Boxes and round shapes have direct formulas. For complicated shapes, I sample the outline from 32 directions the first time it is needed and keep the result.
 
-## Rendering bodies without spawning hundreds of entities
+Without that step, the equation would make a sword slow down exactly like a full block. Mathematically valid. Absolutely not.
 
-A Kinetics body does not need to be a live Bukkit display entity. Block and item displays are rendered with virtual entity IDs through PacketEvents. Kinetics sends spawn, metadata, teleport, and destroy packets only to players who should currently see each body.
+## The client needs receipts
 
-Publication rate depends on distance. Nearby bodies update every tick, mid-range bodies every two ticks, and far bodies every four. A small hysteresis band keeps objects near a boundary from switching rates back and forth. Display interpolation fills the visual gap on the client. Sleeping bodies reuse the same snapshot and stop sending redundant pose packets.
+Jolt can tell me that a body moved, but the Minecraft client still needs something to draw. I send virtual block and item displays through PacketEvents, using network entity IDs that only exist for players who can currently see them. The server does not need to manage every visual body as a full Bukkit entity.
 
-Virtual entities introduce another problem: Bukkit cannot route a click to an entity it does not know exists. The event bridge watches the relevant use and attack packets, raycasts through every candidate scene, and dispatches the closest hit as a normal Kinetics interaction event. The demo applies an impulse at the actual hit point, so an off center sword swing produces rotation instead of a generic shove through the center.
+Bodies close to a player receive a new pose every tick. At medium distance that becomes every two ticks, then every four when the body is farther away, because nobody needs twenty packets per second to admire seven pixels of distant slime ball.
 
-Mobs take the other path. While attached, their AI, gravity, and Bukkit collision are disabled, and the latest Jolt pose drives the real entity. Mob rotation is currently yaw-only because pitching a zombie onto its face is funny once and awkward forever.
+There is a small buffer around each distance boundary. An object has to move clearly across the line before its update rate changes, rather than changing its mind every tick while the player stands on the cutoff. The client glides between the snapshots it does receive, and a sleeping body stops resending the same pose altogether.
 
-## Tests
+Virtual displays create one deeply practical issue: Bukkit cannot report a click on an entity that, as far as Bukkit knows, does not exist. I watch the player's use and attack packets, trace a line from their view through nearby physics scenes, and send the closest hit through the normal interaction event. The impulse is applied at the point that was actually struck, so clipping the side of a sword makes it spin instead of shoving it through the centre.
 
-The tests sit around stuff like: quaternion normalization, generated item masks, shape scaling and cache lifetime, terrain revision races, display distance bands, native cleanup, etc. The packet animation and the actual feel of an impact still need an ingame test. JUnit cannot tell me whether a spinning slime ball looks right, unfortunately.
+Mobs stay as real entities. While Jolt controls one, I switch off its AI, gravity, and normal collision, then drive it from the physics pose. They currently turn left and right, but do not tip forward or backward. Pitching a zombie onto its face is funny once and awkward every time after that.
+
+Tests can catch stale terrain or a Jolt body that survived cleanup. The final check still requires joining the server with a sword. JUnit can tell me whether the rotation math still adds up; it cannot tell me whether the slime ball was launched with sufficient sauce.
+

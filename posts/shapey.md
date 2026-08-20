@@ -5,69 +5,46 @@ published: 2025-06-24
 github: https://github.com/ZECHEESELORD/shapey
 kind: experiment
 tags: Paper, Game Design, Performance
-role: Solo proof-of-concept. Geometry, transform pipeline, and animation.
+role: Solo proof of concept.
 stack: Java, Paper, Particles
 mono: "#7aa6e0, #4f7fc4"
 initials: SH
 ---
 
-Shapey is a Minecraft plugin that renders **3D shapes as particles** in real time. It started as an “I can’t sleep, let’s build something mathy” proof-of-concept, but it ended up being a clean little sandbox for 3D transforms, animation, and geometry generation inside a game loop.
+Shapey began at an hour where sleeping would have been smarter. I wanted to draw a rotating 3D shape in Minecraft with ordinary particles, so I made a cube. Then a sphere. Then a torus. By that point it had become a small geometry playground.
 
-The long term goal is to use this as a stepping stone toward rendering arbitrary `.obj` models ingame.
-
-## What it does
-- Spawns persistent particle “objects” (cube, sphere, torus) with configurable scale, rotation, and resolution.
-- Applies a full transformation pipeline per point, per tick: **scale -> rotate (yaw/pitch/roll) -> translate**.
-- Supports continuous rotation (spin), recoloring, particle-type switching, and deletion.
-- Can morph between shapes by interpolating corresponding geometry points.
+The current plugin keeps particle objects alive in the world, applies transforms every tick, and can morph one point cloud into another. The eventual stupid idea is loading simple `.obj` models ingame.
 
 ## Demo
+
 <video controls playsinline preload="metadata" style="max-width: 100%; border-radius: 12px;">
   <source src="https://github.com/user-attachments/assets/d44a8e96-3519-4d48-8e28-2eef9f42aedd" type="video/mp4" />
   Your browser does not support the video tag.
   <a href="https://github.com/user-attachments/assets/d44a8e96-3519-4d48-8e28-2eef9f42aedd">Open video</a>.
 </video>
 
-## How it’s built
-### Shape instances as first-class objects
-Each rendered object is a `ShapeInstance`: it owns geometry, transformation state, animation parameters, and rendering configuration. Instances are tracked by a central `ShapeManager`, which ticks and re-renders active shapes each server tick.
+## Keeping a shape alive
 
-### Geometry generation
-A `GeometryFactory` generates point clouds for primitives (cube, sphere, torus) given:
-- scale
-- resolution (density)
-- base rotation
+Each visible object is a `ShapeInstance`. It stores a point cloud, world position, scale, yaw, pitch, roll, particle type, and any active animation. A central `ShapeManager` ticks the instances and emits the transformed points.
 
-The design goal is predictable point ordering and stable density controls, so animation and morphing don’t become guesswork.
+`GeometryFactory` creates the primitive point clouds. Cube edges are sampled linearly. Spheres use latitude and longitude rings. The torus uses the usual two-angle parameterization. Point order stays deterministic because morphing pairs points by index; random ordering turns a sphere-to-cube transition into particle soup.
 
-### Transformation pipeline
-Every point runs through the same pipeline:
+Every point follows the same transform sequence:
 
-1. **Scaling** relative to the shape origin  
-2. **Rotation** using explicit per-axis matrix multiplication (Euler angles)  
-3. **Translation** to world position  
+1. Scale around the local origin.
+2. Apply roll, pitch, and yaw with explicit axis matrices.
+3. Translate into world space.
 
-Rotation order is applied consistently (roll, pitch, yaw), and the math stays explicit on purpose- explicit per-axis matrices are easy to step through when a rotation comes out wrong.
+I kept the matrices explicit because rotation bugs are much easier to find when the numbers are sitting in front of you. Quaternions can arrive later, once Euler angles become sufficiently annoying.
 
-### Morphing
-Morphing is implemented by **linear interpolation** between corresponding points in two point arrays.
+## Morphing
 
-Constraint (intentional for the PoC):
-- both shapes must have the same number of points and compatible ordering
+Morphing is linear interpolation between two point arrays:
 
-That limitation is a feature for now: it keeps the core predictable and makes future “real model rendering” work easier to compartmentalize.
+```text
+point(t) = start + (end - start) * t
+```
 
-## Why this is in my portfolio
+The arrays currently need equal lengths and compatible ordering. That constraint made the first version predictable, which mattered more than handling arbitrary topology at three in the morning. A future model importer will need point remapping and decimation anyway.
 
-This is a small project, but it demonstrates the skills I actually lean on in bigger systems:
-- translating math into working code under a realtime loop
-- building a minimal but coherent architecture (instances, manager, factory)
-- implementing real life math and physics for the best block game experience
-
-## Next steps
-If I extend Shapey beyond a proof-of-concept, the roadmap is straightforward:
-
-- Maybe move rendering to packet-based particles (reduce server overhead, better control)
-- Add import path for simple .obj meshes (with normalization and decimation)
-- Potentially improve morphing by remapping points between different topologies
-- Definitely introduce quaternion rotation to avoid Euler edge cases
+For now, Shapey turns geometry and transform math into something visible inside a 20 Hz game loop. Also, spinning particle toruses are cool.

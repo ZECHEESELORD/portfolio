@@ -5,34 +5,29 @@ published: 2025-11-18
 github: https://github.com/ZECHEESELORD/chaotic
 kind: experiment
 tags: Paper, Game Design, Performance
-role: Solo weekend build. Physics core and voxel rendering.
+role: Solo weekend build.
 stack: Java, Paper, PBD, Verlet integration
 mono: "#d5b891, #a97947"
 ---
 
-Chaotic is a realtime N-link pendulum simulation rendered directly inside Minecraft. The point was to make chaos look right, not to build a perfect physics lab. The target was stable, visually plausible motion at Minecraft tick rates, with an implementation that stays clean and extensible.
+A two-link pendulum was insufficiently stupid, so I made the link count configurable and rendered the result inside Minecraft.
 
-Scope: a weekend build, two days. One rule going in- no heavyweight solver, and no unreadable math blobs.
+Chaotic is a realtime N-link pendulum simulation built over one weekend. I wanted stable, convincing motion at 20 ticks per second, readable math, and a solver small enough that I could understand every bad decision it made.
 
-Full writeup (math + physics): PBD, Verlet integration, constraint solving, stability notes  
-[github.com/ZECHEESELORD/chaotic](https://github.com/ZECHEESELORD/chaotic)
+Full writeup and source: [github.com/ZECHEESELORD/chaotic](https://github.com/ZECHEESELORD/chaotic)
 
-## Why this is interesting:
-The N-link pendulum is chaotic: tiny perturbations diverge quickly. Doing it in realtime inside a game loop means you fight two enemies:
-- Numerical stability (exploding energy, jitter, constraint drift)
-- Fixed-step constraints (Minecraft’s 20 Hz tick loop)
+## Making it survive 20 Hz
 
-The project is about picking the right approximations to keep it stable and nice looking under those constraints.
+A chaotic pendulum amplifies tiny numerical errors very quickly. Minecraft gives the simulation one coarse `50 ms` tick, which is plenty of time for rods to stretch, energy to appear from nowhere, and the whole thing to leave the mortal plane.
 
-## What I built
-- Fully parameterized arbitrary N-link system: supports arbitrary link counts and per link arm length; per node mass (kg) / weight factor that feeds inverse mass constraint projection.
-- Position-Based Dynamics (PBD) constraint solver using Verlet integration (stable without a heavy matrix solve).
-- Rigid rod constraints enforced via inverse-mass weighting (anchors and heavier nodes behave naturally).
-- Substepping to make Minecraft’s 20 Hz tick loop workable: each tick is split into smaller physics steps for stability.
-- Simple energy control via damping (using Verlet’s implicit velocity).
-- Clean separation between physics space (double precision) and voxel world rendering via an affine transform.
+I used Verlet integration with Position-Based Dynamics constraints. Positions advance under gravity, then the solver repeatedly projects each rod back to its target length. Inverse-mass weighting decides how much each endpoint moves; anchors stay fixed and heavier nodes yield less.
 
-## Demo videos:
+Each server tick is split into smaller physics steps. That costs more CPU, though it gives the constraint solver a much easier problem and keeps long chains from shaking themselves apart. A small damping term removes the energy introduced by approximation and voxel-scale rendering.
+
+The system supports arbitrary link counts, per-link lengths, and per-node mass. Physics runs in double precision. A separate affine transform maps the result into Minecraft blocks and particles, so the solver never needs to know that its pendulum is being displayed in the best block game.
+
+## Demo videos
+
 <video controls playsinline preload="metadata" style="max-width: 80%; border-radius: 12px;">
   <source src="https://github.com/user-attachments/assets/6e50c054-7222-4bd9-8e5f-f4c1d7918ac5" type="video/mp4" />
   Your browser does not support the video tag.
@@ -51,7 +46,4 @@ The project is about picking the right approximations to keep it stable and nice
   <a href="https://github.com/user-attachments/assets/b92f6ace-cefc-44aa-b5a9-8fa6e6da6198">Open video</a>.
 </video>
 
-## Notes and next steps:
-If I extend this beyond a weekend build, the next steps would be:
-- Add automated checks for constraint drift and stability under different link counts.
-- Package the simulation core as a reusable module for other ingame physics demos.
+The next useful work would be automated drift tests across link counts and substep settings. The current version was judged by the rigorous scientific standard of "does this look sick and remain on screen?"

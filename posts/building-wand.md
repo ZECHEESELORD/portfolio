@@ -3,17 +3,17 @@ title: Survival building without WorldEdit
 published: 2026-06-12
 kind: case
 tags: Paper, Game Design, Display Entities, UI / UX
-role: Game design and engineering: selection model, spatial HUD, shape tools, survival economy, and edit lifecycle.
+role: Solo design and implementation.
 stack: Java 25, Paper 26.1.2, Display Entities, Creative Library v6, JUnit
 image: ../assets/builderwand/cover.jpg
 mono: "#9ad7b0, #d9826b"
 initials: SB
-summary: A survival region editor built around item-owned state, one preview and execution path, and a private display entity HUD.
+summary: A survival building tool that stores the job on the item, previews the exact edit in-world, and spends real blocks when it runs.
 ---
 
-WorldEdit sucks for survival. Its invisible points, commands, and instant edits make sense for an admin tool. In survival they remove the cost and anticipation from building; for a moment, the player stops playing and operates the map.
+WorldEdit sucks for survival. It hides selection points, lives in commands, and executes instantly. Those choices remove the cost and anticipation from building. For that moment, the player stops *playing*. In my opinion, not great SMP design.
 
-This project started with a narrower question: could region editing behave like a piece of gear?
+I wanted region editing to behave like a piece of gear: hold the item, point at the build, adjust it in place, and pay for the blocks.
 
 The original idea was inspired by Minikloon's creative server project.
 
@@ -25,7 +25,7 @@ The original idea was inspired by Minikloon's creative server project.
 
 ## Put the state on the wand
 
-A versioned `WandState` stores both corners, the attachment loadout, block storage, and preview settings inside the item's `PersistentDataContainer`. Each wand also carries a UUID. The state travels with the item through trades and restarts, so two wands can hold different jobs without a player-scoped copy to reconcile.
+A versioned `WandState` stores both corners, the attachment loadout, block storage, and preview settings inside the item's `PersistentDataContainer`. Each wand also carries a UUID. The state follows the item through trades and restarts, so two wands can hold different jobs without maintaining a second player-scoped copy.
 
 <div class="gallery gallery--captioned gallery--ui">
 <figure>
@@ -36,7 +36,7 @@ A versioned `WandState` stores both corners, the attachment loadout, block stora
 </figure>
 </div>
 
-I kept the frequent controls in the world: left click sets or reopens a corner, shift-scroll adjusts it, and shift-click casts. The inventory menu is only for configuration. I did not want building to become a sequence of menu opens.
+The frequent controls stay in the world. Left click sets or reopens a corner, shift-scroll adjusts it, and shift-click casts. The inventory menu handles configuration. I did not want building to become a sequence of menu opens.
 
 <div class="gallery gallery--captioned">
 <figure>
@@ -47,9 +47,9 @@ I kept the frequent controls in the world: left click sets or reopens a corner, 
 </figure>
 </div>
 
-## One evaluation, used twice
+## Previewing the exact cast
 
-A spatial preview becomes harmful if the real cast disagrees with it, so both run through the same `evaluate` path. Every tick it resolves geometry and runs the same cost, boundary, and block-change checks used for casting.
+The preview and the cast run through the same `evaluate` path. Every tick resolves the geometry, material cost, world boundary, and block changes that a real cast would use.
 
 Evaluation returns one record:
 
@@ -67,11 +67,11 @@ private record LiveEvaluation(
 ) {}
 ```
 
-The tick loop renders its `PreviewFrame`. A cast runs `evaluate` again and builds an immutable `CastSnapshot` from the same `EffectiveChanges`. Positions that already contain the target material are removed before pricing, as are container blocks. The snapshot records the expected material at every remaining position; the queue checks those values again before it starts. A delayed cast cannot overwrite a block that changed while it was waiting.
+The tick loop renders its `PreviewFrame`. A cast evaluates again and builds an immutable `CastSnapshot` from the resulting `EffectiveChanges`. Positions already containing the target material are removed before pricing, along with container blocks. The snapshot records the expected material at every remaining position, and the queue checks those values again before starting. A delayed cast cannot overwrite a block that changed while it waited.
 
-Materials are reserved on enqueue and refunded if that preflight fails. Active positions are locked against normal placement and breaking until their batch runs. These checks prevent free blocks, double spending, and mid-animation races without splitting preview and execution into separate rule sets.
+Materials are reserved when the job enters the queue and refunded when preflight fails. Active positions are locked against normal placement and breaking until their batch runs. The reservation and position locks prevent free blocks, double spending, and edits racing with players halfway through the animation.
 
-Builds run bottom-up from Point A; cuts run top-down. The current profile writes one block every two ticks and raises the placement pitch through the job. WorldEdit optimizes for finishing an edit. This queue gives the edit enough time to read as an action inside the game.
+Builds run upward from Point A. Cuts run downward. The current profile writes one block every two ticks and raises the placement pitch through the job. Finishing instantly would be faster. Watching the structure climb out of the ground feels better.
 
 <div class="gallery gallery--captioned gallery--single">
 <figure>
@@ -84,9 +84,9 @@ Builds run bottom-up from Point A; cuts run top-down. The current profile writes
 
 ## Rendering the selection as a HUD
 
-Particles must be resent and do not hold stable geometry. Text has the opposite problem: `12 x 6 x 8` is precise, but the player still has to project it into the world.
+Particles need constant resending and tend to wobble as geometry. A text label such as `12 x 6 x 8` is precise, though the player still has to imagine where that box sits.
 
-`PreviewService` uses `BlockDisplay` entities as a private spatial HUD. A cuboid outline is twelve displays, one per edge. Each is a one-sixteenth-block strip stretched along its axis:
+`PreviewService` uses `BlockDisplay` entities as a private spatial HUD. A cuboid outline needs twelve displays, one for each edge. Each display is a 1/16th block strip stretched along its axis:
 
 ```java
 case X -> new Transformation(
@@ -97,9 +97,9 @@ case X -> new Transformation(
 );
 ```
 
-Within the 24-block axis cap, the outline stays at twelve entities as the box grows. One tick of interpolation smooths corner adjustments; full brightness prevents surrounding light from washing out the validity colors.
+Within the 24-block axis cap, the outline remains twelve entities as the box grows. One tick of interpolation smooths corner adjustments. Full brightness keeps the validity colors readable in caves and direct sunlight.
 
-Non-cuboid tools use at most 160 sampled surface points. The sampler keeps extrema first, fills spatial buckets, then uses a stride fallback. A sphere still reads as a sphere without spawning one display per block.
+Non-cuboid tools use at most 160 sampled surface points. The sampler keeps extrema first, fills spatial buckets, then uses a stride fallback. A sphere still reads as a sphere without spawning one display per affected block.
 
 <div class="gallery gallery--captioned gallery--single">
 <figure>
@@ -110,8 +110,6 @@ Non-cuboid tools use at most 160 sampled surface points. The sampler keeps extre
 </figure>
 </div>
 
-Displays default to invisible and are shown only to the owner or a debug viewer. Sessions reuse entities across frames and remove them when the wand is put away, the player changes worlds, or the preview idles out.
+Displays begin invisible and are shown only to the owner or a debug viewer. Sessions reuse entities across frames and remove them when the wand is put away, the player changes worlds, or the preview idles out.
 
-The shape list is incidental. Item state, survival cost, preview, and execution share one model. Display entities expose that model in the same coordinate space as the build, which is what makes the wand feel like a tool rather than WorldEdit behind a different input.
-
-
+Selection, preview, price, and execution all describe the same edit. The wand therefore behaves as something a lot more intentionally designed.

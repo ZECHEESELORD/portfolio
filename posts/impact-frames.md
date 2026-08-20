@@ -4,28 +4,30 @@ image: /assets/impact/impact.gif
 published: 2026-07-17
 kind: experiment
 tags: Fabric, Rendering, Shaders, Game Design
-role: Solo experiment. Combat hook, cinematic camera, target masking, and post effect.
+role: Solo rendering experiment.
 stack: Java 25, Minecraft 26.3, Fabric, Mixin, GLSL
 mono: "#f4f1e8, #a01824"
 initials: IF
-summary: A Fabric experiment that turns accepted sword hits into a short, target-aware ink-and-paper cutaway.
+summary: A normal sword hit briefly cuts Minecraft into ink, paper, and one very unfortunate target.
 ---
 
-Impact Frames started with one new Minecraft 26.3 rendering API and a fairly specific question: could a normal sword hit become a composed impact frame without replacing the game's renderer?
+Impact Frames started with me reading the new Minecraft 26.3 rendering API and immediately deciding that I was sufficiently bored enough to dedicate a weekend to learning graphics programming. I really wanted to see how if I could somehow implement a stylistic impact frame in Minecraft.
 
-The first pass proved the pipeline; the second was about composition.
+The first version proved the pipeline and looked like a full screen filter. For the sword version, I split the shot into a target mask, a camera sequence, and a slash shader.
 
 ![A sword hit triggering the current Impact Frames sequence](/assets/impact/impact.gif)
 
 ## The first pass
 
-The first version used spear lunges. Its post effect worked, but the target and background were treated too similarly, so the result read as a full-screen filter. For the sword version I split the work into three authored pieces: the target mask, the camera composition, and the GLSL treatment.
+The original version triggered on spear lunges. Its post effect worked, though the target dissolved into the background treatment and the whole image read as one filter. Not very good looking.
 
 ![The earlier Impact Frames treatment](/assets/impact/impact_old.gif)
 
+The struck entity now gets its own mask. A short camera sequence places it on screen, then the shader builds the ink cut around the matching contact point.
+
 ## What changed in 26.3
 
-Minecraft 26.3 added a request/apply path for post effects in `GameRenderer`. A mod can request a namespaced effect for the current frame; Minecraft resolves its JSON chain and records whether it actually ran.
+Minecraft 26.3 added a request/apply path for post effects in `GameRenderer`. A mod can request a namespaced effect for the current frame; Minecraft resolves its JSON chain and records whether it ran.
 
 ```java
 if (ImpactClient.isActive()) {
@@ -35,11 +37,11 @@ if (ImpactClient.isActive()) {
 }
 ```
 
-For Impact Frames, that keeps the effect resource-defined and lets the renderer schedule it through its own frame graph. The mixins choose the inputs and supply one extra render target; Minecraft still owns the post-chain lifecycle.
+Impact Frames uses that path for the effect lifecycle. The mixins choose the inputs and provide one extra render target. Minecraft schedules the chain through its own frame graph.
 
 ## Hooking the hit
 
-The player mixin wraps vanilla's `hurtOrSimulate` call. Vanilla decides whether damage landed first; the mod only records accepted sword damage against a living target.
+The player mixin wraps vanilla's `hurtOrSimulate` call. Vanilla resolves the damage first. Once a sword hit against a living target is accepted, the mod records the entity ID.
 
 ```java
 boolean accepted = original.call(target, source, amount);
@@ -51,9 +53,9 @@ if (accepted
 }
 ```
 
-The sequence starts at the return of `Player.attack`, after vanilla has finished updating combat state.
+The sequence starts when `Player.attack` returns, after vanilla has finished updating combat state.
 
-## Keeping the target separate from the frame
+## Keeping the target separate
 
 I reused Minecraft's entity-outline target as a silhouette mask. During the sequence, only the struck entity renders into it, using sentinel magenta. The vanilla outline composite is skipped and the buffer is imported beside the main scene.
 
@@ -74,7 +76,7 @@ I reused Minecraft's entity-outline target as a silhouette mask. During the sequ
 ]
 ```
 
-The shader receives the untouched scene, a clean target mask, and the dry-brush texture.
+The shader receives the scene, the target silhouette, and a dry-brush texture. That is enough to preserve the target while the rest of the frame gets bullied.
 
 ## Building the shader
 
@@ -105,7 +107,7 @@ One payload seed controls slash geometry and splatter placement. Elapsed millise
 
 ## Authoring the composition
 
-The camera sequence is authored as paired fields of view, rolls, and screen anchors rather than fixed world coordinates.
+The camera sequence uses paired fields of view, rolls, and screen anchors.
 
 ```java
 private static final float[] SHOT_FOV = {
@@ -120,4 +122,4 @@ private static final ScreenAnchor[] SCREEN_ANCHORS = {
 };
 ```
 
-`aimAtAnchor` converts each screen anchor into yaw and pitch after applying field of view, roll, and aspect ratio. The matching GLSL contact anchor puts the slash through the same point on screen.
+`aimAtAnchor` converts each screen anchor into yaw and pitch after applying field of view, roll, and aspect ratio. The matching GLSL contact anchor puts the slash through the same point on screen. The target stays readable, the cut lands where the camera expects it, and a normal sword hit gets to be absurd for a moment.
