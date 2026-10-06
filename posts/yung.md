@@ -2,11 +2,13 @@
 title: Porting YUNG's Mods to 1.21.11
 image: /assets/yung/title.png
 published: 2026-06-01
+featured: 2
 github: https://github.com/ZECHEESELORD/yung-1.21.11-fabric-ports
 kind: oss
-tags: Fabric, Modding, Open Source
+tags: Fabric, Modding, Open Source, Worldgen
 role: Porting engineer.
 stack: Java, Fabric API, Fabric Loader, Mixin, Gradle
+summary: Moving YUNG API, Better End Island, Better Strongholds, and Bridges from 1.21.4 to 1.21.11 Fabric without letting the worldgen quietly fall apart.
 mono: "#9fb9d8, #7f9cc2"
 ---
 

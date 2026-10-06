@@ -32,6 +32,11 @@
   const FILTER_TAGS = [
     "Paper",
     "Fabric",
+    "Rendering",
+    "Shaders",
+    "Resource Packs",
+    "Datapacks",
+    "Worldgen",
     "Velocity",
     "Server Systems",
     "Networking",
@@ -47,6 +52,11 @@
   const TAG_COLOR = {
     Paper: "c-green",
     Fabric: "c-green",
+    Rendering: "c-blue",
+    Shaders: "c-plum",
+    "Resource Packs": "c-plum",
+    Datapacks: "c-teal",
+    Worldgen: "c-green",
     Velocity: "c-green",
     "Server Systems": "c-green",
     Modding: "c-green",
@@ -112,7 +122,9 @@
         return;
       }
       const posts = (await Promise.all(index.map((entry) => loadPost(entry)))).filter(Boolean);
-      const sorted = posts.sort((a, b) => getDateValue(b.published) - getDateValue(a.published));
+      const sorted = posts.sort((a, b) =>
+        a.featured - b.featured || getDateValue(b.published) - getDateValue(a.published)
+      );
       postsCache.clear();
       for (const post of sorted) {
         postsCache.set(post.slug, post);
@@ -169,6 +181,7 @@
       title,
       image,
       published: cleanMetaValue(meta.published),
+      featured: Number(cleanMetaValue(meta.featured)) || Infinity,
       year: cleanMetaValue(meta.year) || getYear(meta.published),
       github: cleanMetaValue(meta.github),
       kind: cleanMetaValue(meta.kind) || "case",
@@ -544,7 +557,7 @@
         <p class="side-card__label">Role</p>
         <p class="body">${escapeHtml(post.role)}</p>
         <dl class="kv-list">
-          <div class="kv"><dt>Released</dt><dd>${escapeHtml(released)}</dd></div>
+          <div class="kv"><dt>Published</dt><dd>${escapeHtml(released)}</dd></div>
           <div class="kv"><dt>Type</dt><dd>${escapeHtml(type)}</dd></div>
         </dl>
       </div>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Datapack Optimizer</title>
+  <desc id="desc">Analyze datapack functions, qualify eligible work, keep everything else native.</desc>
+  <rect width="960" height="540" fill="#eff4f1"/>
+  <g font-family="Arial, sans-serif" fill="#203c35">
+    <text x="64" y="116" font-size="32">DATAPACK OPTIMIZER</text>
+    <text x="64" y="242" font-size="112" font-weight="700">DPO</text>
+    <text x="64" y="302" font-size="30">Less polling. Same command position.</text>
+    <g font-size="28" font-weight="700">
+      <rect x="64" y="370" width="230" height="74" rx="4" fill="#c9e0d9"/>
+      <text x="179" y="417" text-anchor="middle">Analyze</text>
+      <path d="M310 407h40m-12-9 12 9-12 9" fill="none" stroke="#203c35" stroke-width="3"/>
+      <rect x="366" y="370" width="230" height="74" rx="4" fill="#dbe5eb"/>
+      <text x="481" y="417" text-anchor="middle">Qualify</text>
+      <path d="M612 407h40m-12-9 12 9-12 9" fill="none" stroke="#203c35" stroke-width="3"/>
+      <rect x="668" y="370" width="230" height="74" rx="4" fill="#ead5d2"/>
+      <text x="783" y="417" text-anchor="middle">Or stay native</text>
+    </g>
+  </g>
+</svg>

@@ -1,5 +1,21 @@
 [
   {
+    "slug": "shaderlab",
+    "file": "shaderlab.md"
+  },
+  {
+    "slug": "yung",
+    "file": "yung.md"
+  },
+  {
+    "slug": "dpo",
+    "file": "dpo.md"
+  },
+  {
+    "slug": "mineplex-castle-siege",
+    "file": "mineplex-castle-siege.md"
+  },
+  {
     "slug": "blackhole",
     "file": "blackhole.md"
   },
